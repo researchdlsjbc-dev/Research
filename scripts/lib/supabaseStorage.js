@@ -51,9 +51,17 @@ async function storageFetch(config, url, options, { attempts = 4, context = 'Sup
       if (!error.retryable || attempt === attempts - 1) throw error;
       lastError = error;
     } catch (err) {
-      lastError = err;
-      const retryable = err.retryable || ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND'].includes(err.code);
-      if (!retryable || attempt === attempts - 1) throw err;
+      const cause = err && err.cause && err.cause.message ? err.cause.message : (err && err.message) || String(err);
+      const retryable = err && (err.retryable || ['ECONNRESET', 'ETIMEDOUT', 'EAI_AGAIN', 'ENOTFOUND'].includes(err.code));
+      const wrapped = err instanceof BackupError
+        ? err
+        : new BackupError(`${context} network error: ${cause}`, {
+            status: 502,
+            code: 'STORAGE_NETWORK_FAILED',
+            retryable
+          });
+      lastError = wrapped;
+      if (!retryable || attempt === attempts - 1) throw wrapped;
     }
     await sleep(Math.min(15000, 1000 * Math.pow(2, attempt)));
   }
