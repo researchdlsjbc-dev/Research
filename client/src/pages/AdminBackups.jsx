@@ -388,7 +388,6 @@ export default function AdminBackups() {
   const configured = overview?.configured || {};
   const warnings = Array.isArray(overview?.warnings) ? overview.warnings : [];
   const activeJobs = Array.isArray(overview?.active_jobs) ? overview.active_jobs : [];
-  const recentFailures = Array.isArray(overview?.recent_failures) ? overview.recent_failures : [];
 
   return (
     <div className="admin-page space-y-6">
@@ -438,19 +437,6 @@ export default function AdminBackups() {
           </div>
           <ul className="mt-2 space-y-1.5 text-[13.5px] text-amber-900">
             {warnings.map((warning) => <li key={warning}>• {warning}</li>)}
-          </ul>
-        </div>
-      )}
-
-      {recentFailures.length > 0 && (
-        <div className="rounded-2xl border border-red-200 bg-red-50 px-4 py-3">
-          <div className="flex items-center gap-2 text-[13px] font-bold uppercase tracking-[0.12em] text-red-800">
-            <XCircle className="h-4 w-4" /> Recent backup failures
-          </div>
-          <ul className="mt-2 space-y-1.5 text-[13px] text-red-900">
-            {recentFailures.map((job) => (
-              <li key={job.id}>• {kindLabel(job.kind)} job {formatDateTime(job.finished_at || job.created_at)} — {job.error_message || 'Unknown error'}</li>
-            ))}
           </ul>
         </div>
       )}
