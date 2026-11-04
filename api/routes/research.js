@@ -61,7 +61,7 @@ let pdfSupported;
 let accessSupported;
 
 async function loadSchema() {
-  if (featuredSupported !== undefined && pdfSupported !== undefined && accessSupported !== undefined) return;
+  if (featuredSupported === true && pdfSupported === true && accessSupported === true) return;
   try {
     const r = await pool.query(
       `SELECT
