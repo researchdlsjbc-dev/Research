@@ -31,6 +31,7 @@ const {
 } = require('../backup/validation');
 const { cutoffYearFor } = require('../backup/archive');
 const { runJobsInline } = require('../../scripts/lib/workerRunner');
+const { isPgDumpAvailable } = require('../../scripts/lib/pgTools');
 
 const router = express.Router();
 
@@ -605,6 +606,25 @@ router.post('/', async (req, res) => {
         targetId: queued.replaced.map((job) => job.id).join(','),
         req,
         details: { replaced_by: queued.jobs.map((job) => job.id).join(','), kinds }
+      });
+    }
+
+    if (kinds.includes('database') && !(await isPgDumpAvailable())) {
+      await triggerWorkerWebhook();
+      await store.logAudit({
+        adminId: req.user.id,
+        action: 'backup.deferred_to_worker',
+        targetType: 'job',
+        targetId: queued.jobs.map((job) => job.id).join(','),
+        req,
+        details: { kinds, reason: 'pg_dump_unavailable' }
+      });
+      return res.status(202).json({
+        queued: queued.jobs.map(jobView),
+        set_id: queued.set_id,
+        replaced: queued.replaced || [],
+        warning: warning || null,
+        message: 'Backup queued. The backup worker will create it shortly.'
       });
     }
 

@@ -170,6 +170,15 @@ async function getPgRestoreVersion() {
   return stdout.trim();
 }
 
+async function isPgDumpAvailable() {
+  try {
+    await getPgDumpVersion();
+    return true;
+  } catch (_) {
+    return false;
+  }
+}
+
 function buildDumpArgs(rawUrl, filePath, schemas, snapshot = null) {
   const info = parsePostgresUrl(normalizeBackupDatabaseUrl(rawUrl), 'BACKUP_DATABASE_URL');
   const includeOwners = process.env.BACKUP_PG_DUMP_INCLUDE_OWNERS === '1';
@@ -431,6 +440,7 @@ module.exports = {
   runBinary,
   getPgDumpVersion,
   getPgRestoreVersion,
+  isPgDumpAvailable,
   pgDumpToFile,
   pgRestoreFromFile,
   pgRestoreList,
