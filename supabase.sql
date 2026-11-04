@@ -40,6 +40,8 @@ CREATE TABLE IF NOT EXISTS research (
   pdf_file_name TEXT,                            -- original display name of the attached PDF
   pdf_size      BIGINT,                          -- size in bytes
   pdf_content_type TEXT,                         -- expected to be application/pdf
+  pdf_access_code TEXT,                          -- access code required to download the PDF
+  pdf_access_code_updated_at TIMESTAMPTZ,
   submitted_by  BIGINT REFERENCES users(id),
   status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('approved', 'pending', 'rejected')),
   is_featured   BOOLEAN NOT NULL DEFAULT false,   -- admin-curated "featured book" shelf
@@ -67,8 +69,20 @@ CREATE TABLE IF NOT EXISTS research_authors (
   PRIMARY KEY (research_id, author_id)
 );
 
+-- Failed PDF access attempts, used to rate-limit access-code guessing
+CREATE TABLE IF NOT EXISTS research_pdf_access_attempts (
+  id          BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
+  research_id BIGINT NOT NULL REFERENCES research(id) ON DELETE CASCADE,
+  ip_hash     TEXT NOT NULL,
+  successful  BOOLEAN NOT NULL DEFAULT false,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
 -- Indexes used by the search / filter queries
 CREATE INDEX IF NOT EXISTS idx_research_status    ON research (status);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_research_pdf_access_code ON research (pdf_access_code) WHERE pdf_access_code IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_research_pdf_attempts_lookup ON research_pdf_access_attempts (research_id, ip_hash, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_research_pdf_attempts_created ON research_pdf_access_attempts (created_at);
 CREATE INDEX IF NOT EXISTS idx_research_featured  ON research (is_featured) WHERE is_featured;
 CREATE INDEX IF NOT EXISTS idx_research_year      ON research (year);
 CREATE INDEX IF NOT EXISTS idx_research_program   ON research (program_id);

@@ -6,9 +6,12 @@ import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card'
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
 import { Separator } from '../components/ui/separator';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '../components/ui/dialog';
+import { Input } from '../components/ui/input';
+import { Label } from '../components/ui/label';
 import BookOpening from '../components/BookOpening';
 import LockedAbstract from '../components/LockedAbstract';
-import { ArrowLeft, Users, Award, FolderTree, Calendar, FileText, Tags, CheckCircle2, XCircle, BookOpen, Download, Share2, Bookmark, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Users, Award, FolderTree, Calendar, FileText, Tags, CheckCircle2, XCircle, BookOpen, Download, Share2, Bookmark, ExternalLink, ChevronDown, ChevronUp, KeyRound, Loader2 } from 'lucide-react';
 
 const rowMeta = {
   adviser: { icon: Award, tint: 'bg-amber-100 text-amber-700' },
@@ -33,6 +36,12 @@ export default function ResearchDetail() {
   const [reveal, setReveal] = useState(false);
   const [showFullAbstract, setShowFullAbstract] = useState(false);
   const [isBookmarked, setIsBookmarked] = useState(false);
+  const [accessOpen, setAccessOpen] = useState(false);
+  const [accessCode, setAccessCode] = useState('');
+  const [accessError, setAccessError] = useState('');
+  const [accessLoading, setAccessLoading] = useState(false);
+
+  const accessStorageKey = `pdf_access_code_${id}`;
 
   useEffect(() => {
     axios.get(`${API}/research/${id}`).then(r => setResearch(r.data)).catch(() => navigate('/'));
@@ -60,20 +69,69 @@ export default function ResearchDetail() {
     { key: 'year', label: 'Year', value: research.year },
   ];
 
+  const triggerDownload = (data) => {
+    if (!data?.url) throw new Error('No download link was returned.');
+    const link = document.createElement('a');
+    link.href = data.url;
+    link.download = data.file_name || `${research.title}.pdf`;
+    link.rel = 'noopener';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
   const handleDownload = async () => {
+    if (!research.pdf_path) return;
+    if (isAdmin) {
+      try {
+        const { data } = await axios.get(`${API}/research/${id}/download`);
+        triggerDownload(data);
+      } catch (error) {
+        alert(error.response?.data?.error || 'No PDF is attached to this research yet.');
+      }
+      return;
+    }
+
+    const savedCode = sessionStorage.getItem(accessStorageKey);
+    if (savedCode) {
+      setAccessLoading(true);
+      try {
+        const { data } = await axios.post(`${API}/research/${id}/pdf/access`, { code: savedCode });
+        triggerDownload(data);
+        return;
+      } catch (error) {
+        if (error.response?.status === 401) {
+          sessionStorage.removeItem(accessStorageKey);
+        } else {
+          setAccessError(error.response?.data?.error || 'Unable to download this PDF.');
+          setAccessOpen(true);
+          return;
+        }
+      } finally {
+        setAccessLoading(false);
+      }
+    }
+
+    setAccessError('');
+    setAccessCode('');
+    setAccessOpen(true);
+  };
+
+  const handleAccessSubmit = async (event) => {
+    event.preventDefault();
+    setAccessLoading(true);
+    setAccessError('');
     try {
-      const { data } = await axios.get(`${API}/research/${id}/download`);
-      if (!data?.url) throw new Error('No download link was returned.');
-      const link = document.createElement('a');
-      link.href = data.url;
-      link.download = data.file_name || `${research.title}.pdf`;
-      link.rel = 'noopener';
-      link.target = '_blank';
-      document.body.appendChild(link);
-      link.click();
-      link.remove();
+      const { data } = await axios.post(`${API}/research/${id}/pdf/access`, { code: accessCode });
+      sessionStorage.setItem(accessStorageKey, accessCode);
+      triggerDownload(data);
+      setAccessOpen(false);
+      setAccessCode('');
     } catch (error) {
-      alert(error.response?.data?.error || 'No PDF is attached to this research yet.');
+      setAccessError(error.response?.data?.error || 'Invalid access code.');
+    } finally {
+      setAccessLoading(false);
     }
   };
 
@@ -348,6 +406,42 @@ export default function ResearchDetail() {
         {/* Related Research - placeholder for future enhancement */}
         {/* <RelatedResearch programCode={research.program_code} currentId={id} /> */}
       </div>
+
+      <Dialog open={accessOpen} onOpenChange={setAccessOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="h-4 w-4 text-[#0C765E]" /> Enter Access Code
+            </DialogTitle>
+            <DialogDescription>
+              This complete paper is protected. Enter the access code provided with the research to download the PDF.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAccessSubmit} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="pdf-access-code">Access code</Label>
+              <Input
+                id="pdf-access-code"
+                value={accessCode}
+                onChange={(event) => setAccessCode(event.target.value)}
+                placeholder="ABCD-EFGH"
+                autoComplete="off"
+                autoFocus
+                className="rounded-xl border-[#DCEBE5] bg-ivory text-center font-mono text-base uppercase tracking-wider"
+              />
+            </div>
+            {accessError && <p className="text-[12.5px] font-medium text-red-600">{accessError}</p>}
+            <div className="flex gap-2">
+              <Button type="submit" disabled={accessLoading || !accessCode.trim()} className="gradient-btn flex-1 rounded-full">
+                {accessLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download PDF
+              </Button>
+              <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5]" onClick={() => setAccessOpen(false)}>
+                Cancel
+              </Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

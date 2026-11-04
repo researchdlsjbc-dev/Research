@@ -15,6 +15,16 @@ const {
   buildPdfObjectPath,
   validatePdfObjectPath
 } = require('../researchPdf');
+const {
+  generateAccessCode,
+  formatAccessCode,
+  accessCodesMatch,
+  getClientIp,
+  hashClientIp
+} = require('../researchAccess');
+
+const ACCESS_ATTEMPT_WINDOW_MINUTES = 15;
+const ACCESS_ATTEMPT_LIMIT = 5;
 
 const router = express.Router();
 
@@ -48,9 +58,10 @@ const GROUP_BY = `GROUP BY r.id, p.name, p.code, u.full_name`;
 
 let featuredSupported;
 let pdfSupported;
+let accessSupported;
 
 async function loadSchema() {
-  if (featuredSupported !== undefined && pdfSupported !== undefined) return;
+  if (featuredSupported !== undefined && pdfSupported !== undefined && accessSupported !== undefined) return;
   try {
     const r = await pool.query(
       `SELECT
@@ -65,14 +76,22 @@ async function loadSchema() {
            WHERE table_schema = current_schema()
              AND table_name = 'research'
              AND column_name = 'pdf_path'
-         ) AS pdf_present`
+         ) AS pdf_present,
+         EXISTS (
+           SELECT 1 FROM information_schema.columns
+           WHERE table_schema = current_schema()
+             AND table_name = 'research'
+             AND column_name = 'pdf_access_code'
+         ) AS access_present`
     );
     featuredSupported = Boolean(r.rows[0] && r.rows[0].featured_present);
     pdfSupported = Boolean(r.rows[0] && r.rows[0].pdf_present);
+    accessSupported = Boolean(r.rows[0] && r.rows[0].access_present);
   } catch (err) {
     console.error('[api/research] schema check failed, assuming optional columns do NOT exist:', err && err.message ? err.message : err);
     featuredSupported = false;
     pdfSupported = false;
+    accessSupported = false;
   }
 }
 
@@ -109,13 +128,77 @@ function sendResearchError(res, err, context = 'request') {
 
 async function loadPdfTarget(id, user) {
   const extra = pdfSupported ? ', pdf_path, pdf_file_name, pdf_size, pdf_content_type' : '';
-  const { rows } = await pool.query(`SELECT id, code, submitted_by${extra} FROM research WHERE id = $1`, [id]);
+  const access = accessSupported ? ', pdf_access_code, pdf_access_code_updated_at' : '';
+  const { rows } = await pool.query(`SELECT id, code, submitted_by${extra}${access} FROM research WHERE id = $1`, [id]);
   const row = rows[0];
   if (!row) throw httpError(404, 'Not found', 'NOT_FOUND');
   if (user.role !== 'admin' && String(row.submitted_by) !== String(user.id)) {
     throw httpError(403, 'Not authorized', 'NOT_AUTHORIZED');
   }
   return row;
+}
+
+async function createUniqueAccessCode(queryable) {
+  for (let attempt = 0; attempt < 10; attempt += 1) {
+    const code = generateAccessCode();
+    const { rows } = await queryable.query('SELECT 1 FROM research WHERE pdf_access_code = $1', [code]);
+    if (!rows[0]) return code;
+  }
+  throw httpError(500, 'Unable to generate an access code.', 'ACCESS_CODE_GENERATION_FAILED');
+}
+
+async function fetchAccessCodeRow(id) {
+  if (!accessSupported) throw httpError(409, 'PDF access codes are unavailable until the research access migration is applied.', 'ACCESS_MIGRATION_REQUIRED');
+  const { rows } = await pool.query(
+    'SELECT id, pdf_access_code, pdf_access_code_updated_at FROM research WHERE id = $1',
+    [id]
+  );
+  if (!rows[0]) throw httpError(404, 'Not found', 'NOT_FOUND');
+  return rows[0];
+}
+
+async function ensureAccessCode(id) {
+  const row = await fetchAccessCodeRow(id);
+  if (row.pdf_access_code) return { code: row.pdf_access_code, updated_at: row.pdf_access_code_updated_at };
+  try {
+    const code = await createUniqueAccessCode(pool);
+    const { rows } = await pool.query(
+      `UPDATE research
+       SET pdf_access_code = $1, pdf_access_code_updated_at = now()
+       WHERE id = $2
+       RETURNING pdf_access_code AS code, pdf_access_code_updated_at AS updated_at`,
+      [code, id]
+    );
+    return rows[0];
+  } catch (err) {
+    if (err && err.code === '23505') return ensureAccessCode(id);
+    throw err;
+  }
+}
+
+async function enforceAccessAttemptLimit(researchId, ipHash) {
+  await pool.query(
+    `DELETE FROM research_pdf_access_attempts
+     WHERE created_at < now() - interval '1 day'`
+  );
+  const { rows } = await pool.query(
+    `SELECT COUNT(*)::int AS count
+     FROM research_pdf_access_attempts
+     WHERE research_id = $1
+       AND ip_hash = $2
+       AND successful = false
+       AND created_at > now() - ($3::int * interval '1 minute')`,
+    [researchId, ipHash, ACCESS_ATTEMPT_WINDOW_MINUTES]
+  );
+  return Number(rows[0] && rows[0].count) < ACCESS_ATTEMPT_LIMIT;
+}
+
+async function recordAccessAttempt(researchId, ipHash, successful) {
+  await pool.query(
+    `INSERT INTO research_pdf_access_attempts (research_id, ip_hash, successful)
+     VALUES ($1, $2, $3)`,
+    [researchId, ipHash, successful]
+  );
 }
 
 const TRUTHY = ['1', 'true', 'yes', 'on'];
@@ -183,7 +266,7 @@ router.get('/all', authenticateToken, async (req, res) => {
   }
 });
 
-router.get('/:id/download', async (req, res) => {
+router.get('/:id/download', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await loadSchema();
     if (!pdfSupported) return res.status(404).json({ error: 'No PDF is attached to this research.', code: 'PDF_NOT_FOUND' });
@@ -196,6 +279,80 @@ router.get('/:id/download', async (req, res) => {
     res.json({ url, file_name: fileName, expires_in: 60 });
   } catch (err) {
     sendResearchError(res, err, 'PDF download');
+  }
+});
+
+router.post('/:id/pdf/access', async (req, res) => {
+  const ipHash = hashClientIp(getClientIp(req), process.env.JWT_SECRET || 'researchhub');
+  try {
+    await loadSchema();
+    if (!pdfSupported || !accessSupported) {
+      return res.status(409).json({ error: 'PDF access codes are unavailable until the research access migration is applied.', code: 'ACCESS_MIGRATION_REQUIRED' });
+    }
+    const { rows } = await pool.query(
+      'SELECT id, pdf_path, pdf_file_name, pdf_access_code FROM research WHERE id = $1',
+      [req.params.id]
+    );
+    const row = rows[0];
+    if (!row) return res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
+    if (!row.pdf_path) return res.status(404).json({ error: 'No PDF is attached to this research.', code: 'PDF_NOT_FOUND' });
+    if (!row.pdf_access_code) {
+      return res.status(409).json({ error: 'This PDF does not have an access code yet.', code: 'ACCESS_CODE_MISSING' });
+    }
+
+    const allowed = await enforceAccessAttemptLimit(row.id, ipHash);
+    if (!allowed) {
+      return res.status(429).json({
+        error: `Too many incorrect attempts. Try again in ${ACCESS_ATTEMPT_WINDOW_MINUTES} minutes.`,
+        code: 'ACCESS_RATE_LIMITED'
+      });
+    }
+
+    const supplied = req.body && req.body.code;
+    if (!accessCodesMatch(supplied, row.pdf_access_code)) {
+      await recordAccessAttempt(row.id, ipHash, false);
+      return res.status(401).json({ error: 'Invalid access code.', code: 'INVALID_ACCESS_CODE' });
+    }
+
+    await recordAccessAttempt(row.id, ipHash, true);
+    const fileName = row.pdf_file_name || 'research.pdf';
+    const url = await createSignedDownloadUrl(storageConfig(), row.pdf_path, 60, fileName);
+    if (!url) throw httpError(502, 'Unable to create a download link.', 'PDF_DOWNLOAD_LINK_FAILED');
+    res.json({ url, file_name: fileName, expires_in: 60 });
+  } catch (err) {
+    sendResearchError(res, err, 'PDF access');
+  }
+});
+
+router.get('/:id/pdf/access-code', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await loadSchema();
+    const code = await ensureAccessCode(req.params.id);
+    res.json({ code: formatAccessCode(code.code), updated_at: code.updated_at });
+  } catch (err) {
+    sendResearchError(res, err, 'PDF access code');
+  }
+});
+
+router.post('/:id/pdf/access-code/regenerate', authenticateToken, requireAdmin, async (req, res) => {
+  try {
+    await loadSchema();
+    if (!accessSupported) {
+      return res.status(409).json({ error: 'PDF access codes are unavailable until the research access migration is applied.', code: 'ACCESS_MIGRATION_REQUIRED' });
+    }
+    const exists = await pool.query('SELECT id FROM research WHERE id = $1', [req.params.id]);
+    if (!exists.rows[0]) return res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
+    const code = await createUniqueAccessCode(pool);
+    const { rows } = await pool.query(
+      `UPDATE research
+       SET pdf_access_code = $1, pdf_access_code_updated_at = now()
+       WHERE id = $2
+       RETURNING pdf_access_code AS code, pdf_access_code_updated_at AS updated_at`,
+      [code, req.params.id]
+    );
+    res.json({ code: formatAccessCode(rows[0].code), updated_at: rows[0].updated_at });
+  } catch (err) {
+    sendResearchError(res, err, 'PDF access code regeneration');
   }
 });
 
@@ -214,6 +371,7 @@ router.get('/:id', async (req, res) => {
 router.post('/', authenticateToken, async (req, res) => {
   const { title, authors, author_ids, adviser, program_id, year, abstract, keywords } = req.body;
   if (!title || (!authors && !author_ids) || !year) return res.status(400).json({ error: 'Required fields missing' });
+  await loadSchema();
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -226,12 +384,17 @@ router.post('/', authenticateToken, async (req, res) => {
       [codeYear]
     );
     const code = `RS-${codeYear}-${String(sequence.rows[0].max_seq + 1).padStart(4, '0')}`;
-    const { rows } = await client.query(
-      `INSERT INTO research (code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status)
-       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
-       RETURNING id::int AS id, code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status, created_at`,
-      [code, title, authors, adviser || null, program_id ? parseInt(program_id) : null, parseInt(year), abstract || '', keywords || '', req.user.id, req.user.role === 'admin' ? 'approved' : 'pending']
-    );
+    const accessCode = accessSupported ? await createUniqueAccessCode(client) : null;
+    const insertSql = accessSupported
+      ? `INSERT INTO research (code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status, pdf_access_code, pdf_access_code_updated_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())
+         RETURNING id::int AS id, code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status, created_at`
+      : `INSERT INTO research (code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+         RETURNING id::int AS id, code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status, created_at`;
+    const insertValues = [code, title, authors, adviser || null, program_id ? parseInt(program_id) : null, parseInt(year), abstract || '', keywords || '', req.user.id, req.user.role === 'admin' ? 'approved' : 'pending'];
+    if (accessSupported) insertValues.push(accessCode);
+    const { rows } = await client.query(insertSql, insertValues);
     const research = rows[0];
     
     // Handle author associations
@@ -430,7 +593,7 @@ router.patch('/:id/status', authenticateToken, requireAdmin, async (req, res) =>
     const updated = await pool.query('UPDATE research SET status = $1 WHERE id = $2 RETURNING id', [status, req.params.id]);
     if (!updated.rows[0]) return res.status(404).json({ error: 'Not found' });
     const SELECT = await getSelect();
-    const { rows } = await pool.query(`${SELECT} WHERE r.id = $1`, [req.params.id]);
+    const { rows } = await pool.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [req.params.id]);
     res.json(rows[0]);
   } catch (err) {
     console.error('[api/research] request failed:', err && err.message ? err.message : err);
@@ -448,7 +611,7 @@ router.patch('/:id/featured', authenticateToken, requireAdmin, async (req, res) 
     }
     const updated = await pool.query('UPDATE research SET is_featured = $1 WHERE id = $2 RETURNING id', [next, req.params.id]);
     if (!updated.rows[0]) return res.status(404).json({ error: 'Not found' });
-    const { rows } = await pool.query(`${SELECT} WHERE r.id = $1`, [req.params.id]);
+    const { rows } = await pool.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [req.params.id]);
     res.json(rows[0]);
   } catch (err) {
     console.error('[api/research] request failed:', err && err.message ? err.message : err);

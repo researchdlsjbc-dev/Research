@@ -14,7 +14,7 @@ import {
 } from '../components/ui/dialog';
 import { Checkbox } from '../components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Info, BookMarked, FileText, ArrowLeft, Plus, UserPlus, Search, X, Save, Loader2, Paperclip, Upload, FileCheck2, Trash2 } from 'lucide-react';
+import { Info, BookMarked, FileText, ArrowLeft, Plus, UserPlus, Search, X, Save, Loader2, Paperclip, Upload, FileCheck2, Trash2, KeyRound, Copy, RefreshCw } from 'lucide-react';
 
 export default function SubmitResearch() {
   const { id } = useParams();
@@ -36,6 +36,11 @@ export default function SubmitResearch() {
   const [existingPdf, setExistingPdf] = useState(null);
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState('');
+  const [accessCode, setAccessCode] = useState('');
+  const [accessCodeUpdatedAt, setAccessCodeUpdatedAt] = useState(null);
+  const [accessBusy, setAccessBusy] = useState(false);
+  const [accessError, setAccessError] = useState('');
+  const [accessCopied, setAccessCopied] = useState(false);
   const pdfInputRef = useRef(null);
   const isEdit = !!id;
 
@@ -67,6 +72,12 @@ export default function SubmitResearch() {
         const authorNames = d.author_details?.map(a => a.name).join(', ') || d.authors || '';
         setForm({ title: d.title, authors: authorNames, adviser: d.adviser || '', program_id: d.program_id ? String(d.program_id) : '', year: d.year, abstract: d.abstract || '', keywords: d.keywords || '' });
         setExistingPdf(d.pdf_path ? { file_name: d.pdf_file_name || 'research.pdf', size: d.pdf_size || 0, path: d.pdf_path } : null);
+      });
+      axios.get(`${API}/research/${id}/pdf/access-code`).then(r => {
+        setAccessCode(r.data.code || '');
+        setAccessCodeUpdatedAt(r.data.updated_at || null);
+      }).catch(err => {
+        setAccessError(err.response?.data?.error || 'Unable to load the PDF access code.');
       });
     }
   }, [id]);
@@ -143,6 +154,34 @@ export default function SubmitResearch() {
       setPdfError(err.response?.data?.error || 'Unable to remove the attached PDF.');
     } finally {
       setPdfBusy(false);
+    }
+  };
+
+  const handleCopyAccessCode = async () => {
+    if (!accessCode) return;
+    try {
+      await navigator.clipboard.writeText(accessCode);
+      setAccessCopied(true);
+      setTimeout(() => setAccessCopied(false), 1800);
+    } catch (err) {
+      setAccessError('Unable to copy the access code.');
+    }
+  };
+
+  const handleRegenerateAccessCode = async () => {
+    if (!id || accessBusy) return;
+    if (!window.confirm('Generate a new access code? The current code will stop working immediately.')) return;
+    setAccessBusy(true);
+    setAccessError('');
+    try {
+      const { data } = await axios.post(`${API}/research/${id}/pdf/access-code/regenerate`);
+      setAccessCode(data.code || '');
+      setAccessCodeUpdatedAt(data.updated_at || null);
+      setAccessCopied(false);
+    } catch (err) {
+      setAccessError(err.response?.data?.error || 'Unable to regenerate the access code.');
+    } finally {
+      setAccessBusy(false);
     }
   };
 
@@ -386,6 +425,46 @@ export default function SubmitResearch() {
                   </div>
                 </div>
                 {pdfError && <p className="mt-3 text-[12.5px] font-medium text-red-600">{pdfError}</p>}
+
+                <div className="mt-5 rounded-2xl border border-[#DCEBE5] bg-white/80 p-5">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <div>
+                      <p className="flex items-center gap-1.5 text-[13px] font-semibold text-forest">
+                        <KeyRound className="h-4 w-4 text-emerald-brand" /> PDF Access Code
+                      </p>
+                      <p className="mt-1 text-[12px] text-muted-green">
+                        Visitors must enter this code before downloading the complete paper.
+                      </p>
+                    </div>
+                    {accessCode && (
+                      <span className="rounded-full bg-soft-green px-3 py-1 font-mono text-[16px] font-bold tracking-wider text-[#0C765E]">
+                        {accessCode}
+                      </span>
+                    )}
+                  </div>
+                  {id ? (
+                    <>
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green hover:bg-soft-green hover:text-forest" onClick={handleCopyAccessCode} disabled={!accessCode || accessBusy}>
+                          <Copy className="h-4 w-4" /> {accessCopied ? 'Copied' : 'Copy Code'}
+                        </Button>
+                        <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green hover:bg-soft-green hover:text-forest" onClick={handleRegenerateAccessCode} disabled={accessBusy}>
+                          {accessBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Regenerate
+                        </Button>
+                      </div>
+                      {accessCodeUpdatedAt && (
+                        <p className="mt-2 text-[11px] text-muted-green">
+                          Last updated {new Date(accessCodeUpdatedAt).toLocaleString()}
+                        </p>
+                      )}
+                    </>
+                  ) : (
+                    <p className="mt-3 rounded-xl bg-[#F4F8F6] px-3 py-2 text-[12px] text-muted-green">
+                      A unique access code will be generated automatically when this research is saved.
+                    </p>
+                  )}
+                  {accessError && <p className="mt-2 text-[12.5px] font-medium text-red-600">{accessError}</p>}
+                </div>
               </TabsContent>
             )}
           </Tabs>
