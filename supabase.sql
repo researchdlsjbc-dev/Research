@@ -36,6 +36,10 @@ CREATE TABLE IF NOT EXISTS research (
   year          INTEGER NOT NULL,
   abstract      TEXT NOT NULL DEFAULT '',
   keywords      TEXT NOT NULL DEFAULT '',        -- comma-separated keywords
+  pdf_path      TEXT,                            -- Supabase Storage object path (pdfs/<code>/<file>.pdf)
+  pdf_file_name TEXT,                            -- original display name of the attached PDF
+  pdf_size      BIGINT,                          -- size in bytes
+  pdf_content_type TEXT,                         -- expected to be application/pdf
   submitted_by  BIGINT REFERENCES users(id),
   status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('approved', 'pending', 'rejected')),
   is_featured   BOOLEAN NOT NULL DEFAULT false,   -- admin-curated "featured book" shelf

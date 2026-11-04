@@ -10,6 +10,7 @@
     "build:local": "cd client && npm install && npm run build",
     "test": "node --test \"tests/*.test.js\"",
     "migrate:backup": "node scripts/apply-backup-migration.js",
+    "migrate:research-pdf": "node scripts/apply-research-pdf-migration.js",
     "backup:worker": "node scripts/backup-worker.js",
     "backup:once": "node scripts/backup-worker.js --once",
     "backup:schedule": "node scripts/backup-worker.js --schedule --drain",

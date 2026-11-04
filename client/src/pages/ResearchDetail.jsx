@@ -62,16 +62,18 @@ export default function ResearchDetail() {
 
   const handleDownload = async () => {
     try {
-      const response = await axios.get(`${API}/research/${id}/download`, { responseType: 'blob' });
-      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const { data } = await axios.get(`${API}/research/${id}/download`);
+      if (!data?.url) throw new Error('No download link was returned.');
       const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `${research.title}.pdf`);
+      link.href = data.url;
+      link.download = data.file_name || `${research.title}.pdf`;
+      link.rel = 'noopener';
+      link.target = '_blank';
       document.body.appendChild(link);
       link.click();
       link.remove();
     } catch (error) {
-      console.error('Download failed:', error);
+      alert(error.response?.data?.error || 'No PDF is attached to this research yet.');
     }
   };
 
@@ -120,15 +122,17 @@ export default function ResearchDetail() {
             >
               <Share2 className="h-4 w-4" />
             </Button>
-            <Button
-              variant="outline"
-              size="icon"
-              className="rounded-full"
-              onClick={handleDownload}
-              aria-label="Download PDF"
-            >
-              <Download className="h-4 w-4" />
-            </Button>
+            {research.pdf_path && (
+              <Button
+                variant="outline"
+                size="icon"
+                className="rounded-full"
+                onClick={handleDownload}
+                aria-label="Download PDF"
+              >
+                <Download className="h-4 w-4" />
+              </Button>
+            )}
             <Button
               variant="outline"
               size="icon"
@@ -331,9 +335,11 @@ export default function ResearchDetail() {
                 <Button variant="outline" className="rounded-full gap-2" onClick={handleShare}>
                   <Share2 className="h-4 w-4" /> Share
                 </Button>
-                <Button variant="outline" className="rounded-full gap-2" onClick={handleDownload}>
-                  <Download className="h-4 w-4" /> Download
-                </Button>
+                {research.pdf_path && (
+                  <Button variant="outline" className="rounded-full gap-2" onClick={handleDownload}>
+                    <Download className="h-4 w-4" /> Download
+                  </Button>
+                )}
               </div>
             </div>
           </CardContent>

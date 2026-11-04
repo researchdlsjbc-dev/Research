@@ -152,10 +152,86 @@ async function uploadObject(config, objectPath, sourcePath, mimeType = 'applicat
   return response.json().catch(() => ({}));
 }
 
+function storageBaseUrl(config) {
+  return `${config.supabaseUrl.replace(/\/+$/, '')}/storage/v1`;
+}
+
+function absoluteStorageUrl(config, pathOrUrl) {
+  const value = String(pathOrUrl || '');
+  if (/^https?:\/\//i.test(value)) return value;
+  if (!value) return '';
+  return `${storageBaseUrl(config)}${value.startsWith('/') ? '' : '/'}${value}`;
+}
+
+async function createSignedUploadUrl(config, objectPath) {
+  const url = `${storageBaseUrl(config)}/object/upload/sign/${encodeURIComponent(config.storageBucket)}/${encodeObjectPath(objectPath)}`;
+  const response = await storageFetch(config, url, {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json',
+      'x-upsert': 'true'
+    },
+    body: JSON.stringify({})
+  }, { context: 'Supabase Storage signed upload URL' });
+  const data = await response.json().catch(() => ({}));
+  return {
+    uploadUrl: absoluteStorageUrl(config, data.url),
+    token: data.token || null,
+    path: objectPath
+  };
+}
+
+async function createSignedDownloadUrl(config, objectPath, expiresIn = 60, downloadName = '') {
+  const url = `${storageBaseUrl(config)}/object/sign/${encodeURIComponent(config.storageBucket)}/${encodeObjectPath(objectPath)}`;
+  const response = await storageFetch(config, url, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ expiresIn })
+  }, { context: 'Supabase Storage signed download URL' });
+  const data = await response.json().catch(() => ({}));
+  let signedUrl = absoluteStorageUrl(config, data.signedURL || data.signedUrl);
+  if (signedUrl && downloadName) {
+    signedUrl += `${signedUrl.includes('?') ? '&' : '?'}download=${encodeURIComponent(downloadName)}`;
+  }
+  return signedUrl;
+}
+
+async function deleteObject(config, objectPath) {
+  const url = `${storageBaseUrl(config)}/object/${encodeURIComponent(config.storageBucket)}/${encodeObjectPath(objectPath)}`;
+  const response = await fetch(url, {
+    method: 'DELETE',
+    headers: {
+      apikey: config.supabaseServiceKey,
+      authorization: `Bearer ${config.supabaseServiceKey}`
+    }
+  });
+  if (response.ok || response.status === 404) return true;
+  const text = await response.text().catch(() => '');
+  throw new BackupError(`Supabase Storage delete failed with HTTP ${response.status}${text ? `: ${text.slice(0, 300)}` : ''}`, {
+    status: 502,
+    code: 'STORAGE_DELETE_FAILED'
+  });
+}
+
+async function objectExists(config, objectPath) {
+  const normalized = String(objectPath || '').replace(/^\/+|\/+$/g, '');
+  const slash = normalized.lastIndexOf('/');
+  const prefix = slash === -1 ? '' : normalized.slice(0, slash);
+  const name = slash === -1 ? normalized : normalized.slice(slash + 1);
+  const entries = await listDirectory(config, prefix);
+  return entries.some((entry) => entry && entry.name === name && entry.id != null && entry.metadata != null);
+}
+
 module.exports = {
   storageConfig,
   encodeObjectPath,
+  storageBaseUrl,
+  absoluteStorageUrl,
   listObjectsRecursive,
   downloadObject,
-  uploadObject
+  uploadObject,
+  createSignedUploadUrl,
+  createSignedDownloadUrl,
+  deleteObject,
+  objectExists
 };

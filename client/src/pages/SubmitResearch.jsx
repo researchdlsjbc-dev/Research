@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { API, useAuth } from '../context/AuthContext';
@@ -13,7 +13,8 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
 } from '../components/ui/dialog';
 import { Checkbox } from '../components/ui/checkbox';
-import { Info, BookMarked, FileText, ArrowLeft, Plus, UserPlus, Search, X, Save, Loader2 } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
+import { Info, BookMarked, FileText, ArrowLeft, Plus, UserPlus, Search, X, Save, Loader2, Paperclip, Upload, FileCheck2, Trash2 } from 'lucide-react';
 
 export default function SubmitResearch() {
   const { id } = useParams();
@@ -30,6 +31,12 @@ export default function SubmitResearch() {
   const [form, setForm] = useState({ title: '', authors: '', adviser: '', program_id: '', year: new Date().getFullYear(), abstract: '', keywords: '' });
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [tab, setTab] = useState('details');
+  const [pdfFile, setPdfFile] = useState(null);
+  const [existingPdf, setExistingPdf] = useState(null);
+  const [pdfBusy, setPdfBusy] = useState(false);
+  const [pdfError, setPdfError] = useState('');
+  const pdfInputRef = useRef(null);
   const isEdit = !!id;
 
   useEffect(() => {
@@ -59,6 +66,7 @@ export default function SubmitResearch() {
         setSelectedAuthorIds(authorIds);
         const authorNames = d.author_details?.map(a => a.name).join(', ') || d.authors || '';
         setForm({ title: d.title, authors: authorNames, adviser: d.adviser || '', program_id: d.program_id ? String(d.program_id) : '', year: d.year, abstract: d.abstract || '', keywords: d.keywords || '' });
+        setExistingPdf(d.pdf_path ? { file_name: d.pdf_file_name || 'research.pdf', size: d.pdf_size || 0, path: d.pdf_path } : null);
       });
     }
   }, [id]);
@@ -91,20 +99,102 @@ export default function SubmitResearch() {
 
   const filteredAuthors = authors.filter(a => a.name.toLowerCase().includes(authorSearch.toLowerCase()));
 
+  const formatBytes = (bytes) => {
+    const value = Number(bytes) || 0;
+    if (!value) return '';
+    if (value < 1024 * 1024) return `${Math.max(1, Math.round(value / 1024))} KB`;
+    return `${(value / (1024 * 1024)).toFixed(1)} MB`;
+  };
+
+  const clearPdfInput = () => {
+    if (pdfInputRef.current) pdfInputRef.current.value = '';
+  };
+
+  const handlePdfSelect = (event) => {
+    const file = event.target.files?.[0];
+    setPdfError('');
+    if (!file) {
+      setPdfFile(null);
+      return;
+    }
+    if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) {
+      setPdfError('Only PDF files are allowed.');
+      setPdfFile(null);
+      clearPdfInput();
+      return;
+    }
+    if (file.size > 50 * 1024 * 1024) {
+      setPdfError('PDF files must be 50 MB or smaller.');
+      setPdfFile(null);
+      clearPdfInput();
+      return;
+    }
+    setPdfFile(file);
+  };
+
+  const handleRemoveExistingPdf = async () => {
+    if (!id) return;
+    setPdfBusy(true);
+    setPdfError('');
+    try {
+      await axios.delete(`${API}/research/${id}/pdf`);
+      setExistingPdf(null);
+    } catch (err) {
+      setPdfError(err.response?.data?.error || 'Unable to remove the attached PDF.');
+    } finally {
+      setPdfBusy(false);
+    }
+  };
+
+  const uploadPdfToResearch = async (researchId) => {
+    const contentType = pdfFile.type || 'application/pdf';
+    const { data } = await axios.post(`${API}/research/${researchId}/pdf/upload-url`, {
+      file_name: pdfFile.name,
+      size: pdfFile.size,
+      content_type: contentType
+    });
+    const uploadResponse = await fetch(data.upload_url, {
+      method: 'PUT',
+      headers: { 'Content-Type': contentType },
+      body: pdfFile
+    });
+    if (!uploadResponse.ok) {
+      const detail = await uploadResponse.text().catch(() => '');
+      throw new Error(`Storage upload failed (${uploadResponse.status})${detail ? `: ${detail.slice(0, 200)}` : ''}`);
+    }
+    await axios.post(`${API}/research/${researchId}/pdf`, {
+      path: data.path,
+      file_name: data.file_name || pdfFile.name,
+      size: pdfFile.size,
+      content_type: contentType
+    });
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
     setError('');
     try {
       const payload = { ...form, author_ids: selectedAuthorIds };
-      if (isEdit) {
-        await axios.put(`${API}/research/${id}`, payload);
-      } else {
-        await axios.post(`${API}/research/`, payload);
+      const { data: saved } = isEdit
+        ? await axios.put(`${API}/research/${id}`, payload)
+        : await axios.post(`${API}/research/`, payload);
+      if (pdfFile) {
+        try {
+          await uploadPdfToResearch(saved.id);
+        } catch (uploadErr) {
+          const message = uploadErr.response?.data?.error || uploadErr.message || 'PDF upload failed';
+          if (!isEdit) {
+            setError(`Research saved, but the PDF upload failed: ${message}`);
+            setTimeout(() => navigate(`/edit-research/${saved.id}`), 2500);
+            return;
+          }
+          throw new Error(`PDF upload failed: ${message}`);
+        }
       }
       setTimeout(() => navigate(isAdmin ? '/admin/research' : '/research'), 1500);
     } catch (err) {
-      setError(err.response?.data?.error || 'Submission failed');
+      setError(err.response?.data?.error || err.message || 'Submission failed');
     } finally {
       setLoading(false);
     }
@@ -134,6 +224,18 @@ export default function SubmitResearch() {
           <span className="text-[12px] font-semibold text-muted-green"><span className="text-red-500">*</span> Required fields</span>
         </div>
         <div className="admin-panel-body">
+          <Tabs value={isAdmin ? tab : 'details'} onValueChange={setTab} className="w-full">
+            {isAdmin && (
+              <TabsList className="mb-5 h-auto rounded-full bg-[#EEF5F1] p-1">
+                <TabsTrigger value="details" className="rounded-full px-4 py-2 text-[13px] font-semibold data-[state=active]:bg-white data-[state=active]:text-forest">
+                  <FileText className="mr-1.5 h-3.5 w-3.5" /> Work Details
+                </TabsTrigger>
+                <TabsTrigger value="pdf" className="rounded-full px-4 py-2 text-[13px] font-semibold data-[state=active]:bg-white data-[state=active]:text-forest">
+                  <Paperclip className="mr-1.5 h-3.5 w-3.5" /> Attach File
+                </TabsTrigger>
+              </TabsList>
+            )}
+            <TabsContent value="details" className="mt-0">
           <div className="admin-note mb-6">
             <Info className="mt-0.5 h-4 w-4 shrink-0 text-emerald-brand" />
             <span>A unique research code (e.g. <strong className="font-mono font-semibold text-[#0C765E]">RS-2026-0001</strong>) will be automatically assigned when submitted.</span>
@@ -236,6 +338,57 @@ export default function SubmitResearch() {
               <Textarea id="abstract" rows={5} value={form.abstract} onChange={e => setForm({...form, abstract: e.target.value})} placeholder="Enter the research abstract..." className="rounded-xl border-[#DCEBE5] bg-ivory" />
             </div>
           </div>
+            </TabsContent>
+
+            {isAdmin && (
+              <TabsContent value="pdf" className="mt-0">
+                <div className="admin-note mb-6">
+                  <Paperclip className="mt-0.5 h-4 w-4 shrink-0 text-emerald-brand" />
+                  <span>PDF files are kept in the repository's dedicated <strong className="font-mono font-semibold text-[#0C765E]">pdfs</strong> folder.</span>
+                </div>
+                <div className="rounded-2xl border border-dashed border-[#CFE2DA] bg-ivory/60 p-6 text-center">
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-soft-green text-[#0C765E]">
+                    {pdfFile ? <FileCheck2 className="h-5 w-5" /> : <Upload className="h-5 w-5" />}
+                  </div>
+                  <p className="mt-3 break-words text-[14px] font-semibold text-forest">
+                    {pdfFile ? pdfFile.name : existingPdf ? existingPdf.file_name : 'Choose a PDF file'}
+                  </p>
+                  <p className="mt-1 text-[12px] text-muted-green">
+                    {pdfFile
+                      ? `${formatBytes(pdfFile.size)} selected · uploaded when you save`
+                      : existingPdf
+                        ? `${formatBytes(existingPdf.size)}${existingPdf.size ? ' · ' : ''}currently attached`
+                        : 'PDF only · up to 50 MB'}
+                  </p>
+                  <input
+                    ref={pdfInputRef}
+                    id="pdf-file"
+                    type="file"
+                    accept=".pdf,application/pdf"
+                    onChange={handlePdfSelect}
+                    className="sr-only"
+                  />
+                  <div className="mt-4 flex flex-wrap justify-center gap-2">
+                    <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green hover:bg-soft-green hover:text-forest" onClick={() => pdfInputRef.current?.click()}>
+                      <Upload className="h-4 w-4" />
+                      {pdfFile ? 'Choose Another PDF' : existingPdf ? 'Replace PDF' : 'Choose PDF'}
+                    </Button>
+                    {pdfFile && (
+                      <Button type="button" variant="ghost" className="rounded-full text-[13px] font-semibold text-muted-green" onClick={() => { setPdfFile(null); clearPdfInput(); }}>
+                        <X className="h-4 w-4" /> Clear
+                      </Button>
+                    )}
+                    {existingPdf && !pdfFile && (
+                      <Button type="button" variant="outline" className="rounded-full border-red-200 text-[13px] font-semibold text-red-600 hover:bg-red-50" onClick={handleRemoveExistingPdf} disabled={pdfBusy}>
+                        {pdfBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />} Remove
+                      </Button>
+                    )}
+                  </div>
+                </div>
+                {pdfError && <p className="mt-3 text-[12.5px] font-medium text-red-600">{pdfError}</p>}
+              </TabsContent>
+            )}
+          </Tabs>
 
           <div className="mt-7 flex flex-wrap gap-3 border-t border-[#EEF3F0] pt-5">
             <Button type="submit" disabled={loading} className="gradient-btn min-w-40 rounded-full">

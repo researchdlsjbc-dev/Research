@@ -1,6 +1,20 @@
 const express = require('express');
 const pool = require('../db');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const {
+  storageConfig,
+  createSignedUploadUrl,
+  createSignedDownloadUrl,
+  deleteObject,
+  objectExists
+} = require('../../scripts/lib/supabaseStorage');
+const {
+  PDF_MIME_TYPE,
+  sanitizePdfFileName,
+  validatePdfUpload,
+  buildPdfObjectPath,
+  validatePdfObjectPath
+} = require('../researchPdf');
 
 const router = express.Router();
 
@@ -33,22 +47,32 @@ const SELECT_FROM = `p.name AS program_name, p.code AS program_code,
 const GROUP_BY = `GROUP BY r.id, p.name, p.code, u.full_name`;
 
 let featuredSupported;
+let pdfSupported;
 
 async function loadSchema() {
-  if (featuredSupported !== undefined) return;
+  if (featuredSupported !== undefined && pdfSupported !== undefined) return;
   try {
     const r = await pool.query(
-      `SELECT EXISTS (
-         SELECT 1 FROM information_schema.columns
-         WHERE table_schema = current_schema()
-           AND table_name = 'research'
-           AND column_name = 'is_featured'
-       ) AS present`
+      `SELECT
+         EXISTS (
+           SELECT 1 FROM information_schema.columns
+           WHERE table_schema = current_schema()
+             AND table_name = 'research'
+             AND column_name = 'is_featured'
+         ) AS featured_present,
+         EXISTS (
+           SELECT 1 FROM information_schema.columns
+           WHERE table_schema = current_schema()
+             AND table_name = 'research'
+             AND column_name = 'pdf_path'
+         ) AS pdf_present`
     );
-    featuredSupported = Boolean(r.rows[0] && r.rows[0].present);
+    featuredSupported = Boolean(r.rows[0] && r.rows[0].featured_present);
+    pdfSupported = Boolean(r.rows[0] && r.rows[0].pdf_present);
   } catch (err) {
-    console.error('[api/research] is_featured column check failed, assuming column does NOT exist:', err && err.message ? err.message : err);
+    console.error('[api/research] schema check failed, assuming optional columns do NOT exist:', err && err.message ? err.message : err);
     featuredSupported = false;
+    pdfSupported = false;
   }
 }
 
@@ -57,10 +81,41 @@ async function getSelect() {
   const featuredField = featuredSupported
     ? 'COALESCE(r.is_featured, false) AS is_featured'
     : 'false AS is_featured';
+  const pdfFields = pdfSupported
+    ? `r.pdf_path, r.pdf_file_name, r.pdf_size::int AS pdf_size, r.pdf_content_type`
+    : `NULL::text AS pdf_path, NULL::text AS pdf_file_name, NULL::int AS pdf_size, NULL::text AS pdf_content_type`;
   return {
-    fields: `SELECT ${SELECT_FIELDS}, ${featuredField}, ${SELECT_FROM}`,
+    fields: `SELECT ${SELECT_FIELDS}, ${featuredField}, ${pdfFields}, ${SELECT_FROM}`,
     groupBy: GROUP_BY
   };
+}
+
+function httpError(status, message, code) {
+  const err = new Error(message);
+  err.status = status;
+  err.code = code;
+  return err;
+}
+
+function sendResearchError(res, err, context = 'request') {
+  const status = Number.isInteger(err && err.status) ? err.status : 500;
+  if (status >= 500) {
+    console.error(`[api/research] ${context} failed:`, err && err.message ? err.message : err);
+  }
+  const body = { error: status >= 500 ? 'Server error' : err.message };
+  if (err && err.code) body.code = err.code;
+  res.status(status).json(body);
+}
+
+async function loadPdfTarget(id, user) {
+  const extra = pdfSupported ? ', pdf_path, pdf_file_name, pdf_size, pdf_content_type' : '';
+  const { rows } = await pool.query(`SELECT id, code, submitted_by${extra} FROM research WHERE id = $1`, [id]);
+  const row = rows[0];
+  if (!row) throw httpError(404, 'Not found', 'NOT_FOUND');
+  if (user.role !== 'admin' && String(row.submitted_by) !== String(user.id)) {
+    throw httpError(403, 'Not authorized', 'NOT_AUTHORIZED');
+  }
+  return row;
 }
 
 const TRUTHY = ['1', 'true', 'yes', 'on'];
@@ -125,6 +180,22 @@ router.get('/all', authenticateToken, async (req, res) => {
   } catch (err) {
     console.error('[api/research] request failed:', err && err.message ? err.message : err);
     res.status(500).json({ error: 'Server error' });
+  }
+});
+
+router.get('/:id/download', async (req, res) => {
+  try {
+    await loadSchema();
+    if (!pdfSupported) return res.status(404).json({ error: 'No PDF is attached to this research.', code: 'PDF_NOT_FOUND' });
+    const { rows } = await pool.query('SELECT id, pdf_path, pdf_file_name FROM research WHERE id = $1', [req.params.id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
+    if (!rows[0].pdf_path) return res.status(404).json({ error: 'No PDF is attached to this research.', code: 'PDF_NOT_FOUND' });
+    const fileName = rows[0].pdf_file_name || 'research.pdf';
+    const url = await createSignedDownloadUrl(storageConfig(), rows[0].pdf_path, 60, fileName);
+    if (!url) throw httpError(502, 'Unable to create a download link.', 'PDF_DOWNLOAD_LINK_FAILED');
+    res.json({ url, file_name: fileName, expires_in: 60 });
+  } catch (err) {
+    sendResearchError(res, err, 'PDF download');
   }
 });
 
@@ -196,7 +267,7 @@ router.post('/', authenticateToken, async (req, res) => {
     
     // Return with author details
     const SELECT = await getSelect();
-    const { rows: finalRows } = await client.query(`${SELECT} WHERE r.id = $1`, [research.id]);
+    const { rows: finalRows } = await client.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [research.id]);
     res.json(finalRows[0]);
   } catch (err) {
     await client.query('ROLLBACK');
@@ -261,7 +332,7 @@ router.put('/:id', authenticateToken, async (req, res) => {
     
     // Return with author details
     const SELECT = await getSelect();
-    const { rows: finalRows } = await client.query(`${SELECT} WHERE r.id = $1`, [research.id]);
+    const { rows: finalRows } = await client.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [research.id]);
     res.json(finalRows[0]);
   } catch (err) {
     await client.query('ROLLBACK');
@@ -269,6 +340,86 @@ router.put('/:id', authenticateToken, async (req, res) => {
     res.status(500).json({ error: 'Server error' });
   } finally {
     client.release();
+  }
+});
+
+router.post('/:id/pdf/upload-url', authenticateToken, async (req, res) => {
+  try {
+    await loadSchema();
+    if (!pdfSupported) {
+      return res.status(409).json({ error: 'PDF attachments are unavailable until the research PDF migration is applied.', code: 'PDF_MIGRATION_REQUIRED' });
+    }
+    const target = await loadPdfTarget(req.params.id, req.user);
+    const body = req.body || {};
+    const validation = validatePdfUpload({ fileName: body.file_name, contentType: body.content_type, size: body.size });
+    if (!validation.ok) return res.status(400).json({ error: validation.error, code: 'INVALID_PDF' });
+    const fileName = sanitizePdfFileName(body.file_name);
+    const objectPath = buildPdfObjectPath(target.code, fileName);
+    const signed = await createSignedUploadUrl(storageConfig(), objectPath);
+    if (!signed.uploadUrl) throw httpError(502, 'Unable to create an upload link.', 'PDF_UPLOAD_LINK_FAILED');
+    res.json({
+      upload_url: signed.uploadUrl,
+      path: objectPath,
+      file_name: fileName,
+      expires_in: 7200
+    });
+  } catch (err) {
+    sendResearchError(res, err, 'PDF upload URL');
+  }
+});
+
+router.post('/:id/pdf', authenticateToken, async (req, res) => {
+  try {
+    await loadSchema();
+    if (!pdfSupported) {
+      return res.status(409).json({ error: 'PDF attachments are unavailable until the research PDF migration is applied.', code: 'PDF_MIGRATION_REQUIRED' });
+    }
+    const target = await loadPdfTarget(req.params.id, req.user);
+    const body = req.body || {};
+    const pathCheck = validatePdfObjectPath(body.path, target.code);
+    if (!pathCheck.ok) return res.status(400).json({ error: pathCheck.error, code: 'INVALID_PDF_PATH' });
+    const fileName = sanitizePdfFileName(body.file_name || pathCheck.path);
+    const validation = validatePdfUpload({ fileName, contentType: body.content_type, size: body.size });
+    if (!validation.ok) return res.status(400).json({ error: validation.error, code: 'INVALID_PDF' });
+
+    const config = storageConfig();
+    const exists = await objectExists(config, pathCheck.path);
+    if (!exists) return res.status(409).json({ error: 'The PDF upload did not complete. Please try again.', code: 'PDF_UPLOAD_MISSING' });
+
+    const oldPath = target.pdf_path && target.pdf_path !== pathCheck.path ? target.pdf_path : null;
+    await pool.query(
+      `UPDATE research
+       SET pdf_path = $1, pdf_file_name = $2, pdf_size = $3, pdf_content_type = $4
+       WHERE id = $5`,
+      [pathCheck.path, fileName, Number(body.size), PDF_MIME_TYPE, req.params.id]
+    );
+    if (oldPath) await deleteObject(config, oldPath).catch((err) => console.warn('[api/research] old PDF cleanup failed:', err && err.message ? err.message : err));
+
+    const SELECT = await getSelect();
+    const { rows } = await pool.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [req.params.id]);
+    res.json(rows[0]);
+  } catch (err) {
+    sendResearchError(res, err, 'PDF attach');
+  }
+});
+
+router.delete('/:id/pdf', authenticateToken, async (req, res) => {
+  try {
+    await loadSchema();
+    if (!pdfSupported) {
+      return res.status(409).json({ error: 'PDF attachments are unavailable until the research PDF migration is applied.', code: 'PDF_MIGRATION_REQUIRED' });
+    }
+    const target = await loadPdfTarget(req.params.id, req.user);
+    if (target.pdf_path) {
+      await deleteObject(storageConfig(), target.pdf_path).catch((err) => console.warn('[api/research] PDF cleanup failed:', err && err.message ? err.message : err));
+    }
+    await pool.query(
+      'UPDATE research SET pdf_path = NULL, pdf_file_name = NULL, pdf_size = NULL, pdf_content_type = NULL WHERE id = $1',
+      [req.params.id]
+    );
+    res.json({ message: 'PDF removed' });
+  } catch (err) {
+    sendResearchError(res, err, 'PDF remove');
   }
 });
 
@@ -311,6 +462,9 @@ router.delete('/:id', authenticateToken, async (req, res) => {
     if (!existing.rows[0]) return res.status(404).json({ error: 'Not found' });
     const cur = existing.rows[0];
     if (req.user.role !== 'admin' && String(cur.submitted_by) !== String(req.user.id)) return res.status(403).json({ error: 'Not authorized' });
+    if (cur.pdf_path) {
+      await deleteObject(storageConfig(), cur.pdf_path).catch((err) => console.warn('[api/research] PDF cleanup failed:', err && err.message ? err.message : err));
+    }
     await pool.query('DELETE FROM research_authors WHERE research_id = $1', [req.params.id]);
     await pool.query('DELETE FROM research WHERE id = $1', [req.params.id]);
     res.json({ message: 'Deleted' });
