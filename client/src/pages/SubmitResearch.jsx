@@ -128,7 +128,8 @@ export default function SubmitResearch() {
       setPdfFile(null);
       return;
     }
-    if (!/\.pdf$/i.test(file.name) || (file.type && file.type !== 'application/pdf')) {
+    const contentType = String(file.type || '').toLowerCase();
+    if (!/\.pdf$/i.test(file.name) || (contentType && contentType !== 'application/pdf' && contentType !== 'application/octet-stream')) {
       setPdfError('Only PDF files are allowed.');
       setPdfFile(null);
       clearPdfInput();
@@ -223,9 +224,11 @@ export default function SubmitResearch() {
           await uploadPdfToResearch(saved.id);
         } catch (uploadErr) {
           const message = uploadErr.response?.data?.error || uploadErr.message || 'PDF upload failed';
+          setPdfError(message);
+          setTab('pdf');
           if (!isEdit) {
             setError(`Research saved, but the PDF upload failed: ${message}`);
-            setTimeout(() => navigate(`/edit-research/${saved.id}`), 2500);
+            setTimeout(() => navigate(`/edit-research/${saved.id}`), 5000);
             return;
           }
           throw new Error(`PDF upload failed: ${message}`);
@@ -263,6 +266,11 @@ export default function SubmitResearch() {
           <span className="text-[12px] font-semibold text-muted-green"><span className="text-red-500">*</span> Required fields</span>
         </div>
         <div className="admin-panel-body">
+          {error && (
+            <div role="alert" className="mb-5 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-[13px] font-medium text-red-700">
+              {error}
+            </div>
+          )}
           <Tabs value={isAdmin ? tab : 'details'} onValueChange={setTab} className="w-full">
             {isAdmin && (
               <TabsList className="mb-5 h-auto rounded-full bg-[#EEF5F1] p-1">
