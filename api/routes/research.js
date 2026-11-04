@@ -65,28 +65,28 @@ async function loadSchema() {
   try {
     const r = await pool.query(
       `SELECT
-         EXISTS (
-           SELECT 1 FROM information_schema.columns
-           WHERE table_schema = current_schema()
-             AND table_name = 'research'
-             AND column_name = 'is_featured'
-         ) AS featured_present,
-         EXISTS (
-           SELECT 1 FROM information_schema.columns
-           WHERE table_schema = current_schema()
-             AND table_name = 'research'
-             AND column_name = 'pdf_path'
-         ) AS pdf_present,
-         EXISTS (
-           SELECT 1 FROM information_schema.columns
-           WHERE table_schema = current_schema()
-             AND table_name = 'research'
-             AND column_name = 'pdf_access_code'
-         ) AS access_present`
+         (SELECT COUNT(*)::int FROM information_schema.columns
+          WHERE table_schema = current_schema()
+            AND table_name = 'research'
+            AND column_name = 'is_featured') AS featured_count,
+         (SELECT COUNT(*)::int FROM information_schema.columns
+          WHERE table_schema = current_schema()
+            AND table_name = 'research'
+            AND column_name IN ('pdf_path', 'pdf_file_name', 'pdf_size', 'pdf_content_type')) AS pdf_count,
+         (SELECT COUNT(*)::int FROM information_schema.columns
+          WHERE table_schema = current_schema()
+            AND table_name = 'research'
+            AND column_name IN ('pdf_access_code', 'pdf_access_code_updated_at')) AS access_count,
+         (SELECT EXISTS (
+            SELECT 1 FROM information_schema.tables
+            WHERE table_schema = current_schema()
+              AND table_name = 'research_pdf_access_attempts'
+          )) AS access_attempts_present`
     );
-    featuredSupported = Boolean(r.rows[0] && r.rows[0].featured_present);
-    pdfSupported = Boolean(r.rows[0] && r.rows[0].pdf_present);
-    accessSupported = Boolean(r.rows[0] && r.rows[0].access_present);
+    const row = r.rows[0] || {};
+    featuredSupported = Number(row.featured_count) > 0;
+    pdfSupported = Number(row.pdf_count) === 4;
+    accessSupported = Number(row.access_count) === 2 && row.access_attempts_present === true;
   } catch (err) {
     console.error('[api/research] schema check failed, assuming optional columns do NOT exist:', err && err.message ? err.message : err);
     featuredSupported = false;
@@ -116,13 +116,18 @@ function httpError(status, message, code) {
   return err;
 }
 
-function sendResearchError(res, err, context = 'request') {
+function sendResearchError(res, err, context = 'request', options = {}) {
   const status = Number.isInteger(err && err.status) ? err.status : 500;
+  const expose = options.expose === true;
+  const message = err && err.message ? err.message : 'Server error';
   if (status >= 500) {
-    console.error(`[api/research] ${context} failed:`, err && err.message ? err.message : err);
+    console.error(`[api/research] ${context} failed:`, message);
   }
-  const body = { error: status >= 500 ? 'Server error' : err.message };
+  let error = status >= 500 && !expose ? 'Server error' : message;
+  if (expose && status >= 500 && err && err.code) error = `${message} (${err.code})`;
+  const body = { error };
   if (err && err.code) body.code = err.code;
+  if (expose && status >= 500 && err && err.detail) body.detail = String(err.detail).slice(0, 500);
   res.status(status).json(body);
 }
 
@@ -278,7 +283,7 @@ router.get('/:id/download', authenticateToken, requireAdmin, async (req, res) =>
     if (!url) throw httpError(502, 'Unable to create a download link.', 'PDF_DOWNLOAD_LINK_FAILED');
     res.json({ url, file_name: fileName, expires_in: 60 });
   } catch (err) {
-    sendResearchError(res, err, 'PDF download');
+    sendResearchError(res, err, 'PDF download', { expose: true });
   }
 });
 
@@ -330,7 +335,7 @@ router.get('/:id/pdf/access-code', authenticateToken, requireAdmin, async (req, 
     const code = await ensureAccessCode(req.params.id);
     res.json({ code: formatAccessCode(code.code), updated_at: code.updated_at });
   } catch (err) {
-    sendResearchError(res, err, 'PDF access code');
+    sendResearchError(res, err, 'PDF access code', { expose: req.user.role === 'admin' });
   }
 });
 
@@ -352,7 +357,7 @@ router.post('/:id/pdf/access-code/regenerate', authenticateToken, requireAdmin, 
     );
     res.json({ code: formatAccessCode(rows[0].code), updated_at: rows[0].updated_at });
   } catch (err) {
-    sendResearchError(res, err, 'PDF access code regeneration');
+    sendResearchError(res, err, 'PDF access code regeneration', { expose: req.user.role === 'admin' });
   }
 });
 
@@ -527,7 +532,7 @@ router.post('/:id/pdf/upload-url', authenticateToken, async (req, res) => {
       expires_in: 7200
     });
   } catch (err) {
-    sendResearchError(res, err, 'PDF upload URL');
+    sendResearchError(res, err, 'PDF upload URL', { expose: req.user.role === 'admin' });
   }
 });
 
@@ -562,7 +567,7 @@ router.post('/:id/pdf', authenticateToken, async (req, res) => {
     const { rows } = await pool.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [req.params.id]);
     res.json(rows[0]);
   } catch (err) {
-    sendResearchError(res, err, 'PDF attach');
+    sendResearchError(res, err, 'PDF attach', { expose: req.user.role === 'admin' });
   }
 });
 
@@ -582,7 +587,7 @@ router.delete('/:id/pdf', authenticateToken, async (req, res) => {
     );
     res.json({ message: 'PDF removed' });
   } catch (err) {
-    sendResearchError(res, err, 'PDF remove');
+    sendResearchError(res, err, 'PDF remove', { expose: req.user.role === 'admin' });
   }
 });
 
