@@ -75,15 +75,24 @@ test('dump args are safe by default and schema names are validated', () => {
   assert.throws(() => parseSchemaList(), /Invalid schema name/);
 });
 
-test('transaction pooler is refused for pg_dump', () => {
+test('Supabase transaction pooler is upgraded to the session pooler for pg_dump', () => {
+  resetEnv();
+  delete process.env.BACKUP_ALLOW_POOLER;
+  const info = assertBackupConnection('postgresql://postgres.abc:p@aws-0-region.pooler.supabase.com:6543/postgres');
+  assert.equal(info.port, '5432');
+  const { args } = buildDumpArgs('postgresql://postgres.abc:p@aws-0-region.pooler.supabase.com:6543/postgres', 'out.dump', ['public']);
+  assert.equal(args[args.indexOf('--port') + 1], '5432');
+  process.env.BACKUP_ALLOW_POOLER = '1';
+  assert.equal(assertBackupConnection('postgresql://postgres.abc:p@aws-0-region.pooler.supabase.com:6543/postgres').port, '6543');
+});
+
+test('non-Supabase transaction poolers are still refused for pg_dump', () => {
   resetEnv();
   delete process.env.BACKUP_ALLOW_POOLER;
   assert.throws(
-    () => assertBackupConnection('postgresql://u:p@aws-0-region.pooler.supabase.com:6543/postgres'),
+    () => assertBackupConnection('postgresql://u:p@pooler.example.com:6543/postgres'),
     /transaction pooler/
   );
-  process.env.BACKUP_ALLOW_POOLER = '1';
-  assert.equal(assertBackupConnection('postgresql://u:p@aws-0-region.pooler.supabase.com:6543/postgres').port, '6543');
 });
 
 test('restore args are transactional and non-destructive outside the target', () => {

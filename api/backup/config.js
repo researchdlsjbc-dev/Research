@@ -1,4 +1,5 @@
 const { BackupError } = require('./errors');
+const { normalizeBackupDatabaseUrl } = require('./databaseUrl');
 
 const PRODUCTION_APP_URL = 'https://research-pi-ten.vercel.app';
 const REDIRECT_PATH = '/api/auth/google/callback';
@@ -49,8 +50,8 @@ function getConfig() {
     supabaseServiceKey: firstEnv('SUPABASE_SERVICE_ROLE_KEY'),
     storageBucket: firstEnv('SUPABASE_STORAGE_BUCKET'),
     stagingDatabaseUrl: firstEnv('RESTORE_STAGING_DATABASE_URL'),
-    backupDatabaseUrl: firstEnv('BACKUP_DATABASE_URL', 'DATABASE_URL'),
-    productionDatabaseUrl: firstEnv('DATABASE_URL', 'BACKUP_DATABASE_URL'),
+    backupDatabaseUrl: normalizeBackupDatabaseUrl(firstEnv('BACKUP_DATABASE_URL', 'DATABASE_URL')),
+    productionDatabaseUrl: normalizeBackupDatabaseUrl(firstEnv('DATABASE_URL', 'BACKUP_DATABASE_URL')),
     tokenKeyVersion: TOKEN_KEY_VERSION
   };
 }

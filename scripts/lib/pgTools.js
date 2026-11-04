@@ -2,6 +2,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 const { BackupError, safeErrorMessage } = require('../../api/backup/errors');
 const { sameDatabase } = require('../../api/backup/validation');
+const { normalizeBackupDatabaseUrl } = require('../../api/backup/databaseUrl');
 
 const MAX_CAPTURED_STDERR = 12000;
 
@@ -63,10 +64,10 @@ function buildPgEnv(rawUrl, baseEnv = process.env) {
 }
 
 function assertBackupConnection(rawUrl) {
-  const info = parsePostgresUrl(rawUrl, 'BACKUP_DATABASE_URL');
+  const info = parsePostgresUrl(normalizeBackupDatabaseUrl(rawUrl), 'BACKUP_DATABASE_URL');
   if (String(info.port) === '6543' && process.env.BACKUP_ALLOW_POOLER !== '1') {
     throw new BackupError(
-      'BACKUP_DATABASE_URL points at the Supabase transaction pooler (port 6543). pg_dump requires a direct connection or session pooler on port 5432. Set BACKUP_DATABASE_URL to the session/direct connection string.',
+      'BACKUP_DATABASE_URL points at a transaction pooler (port 6543). pg_dump requires a direct connection or session pooler on port 5432. Set BACKUP_DATABASE_URL to the session/direct connection string.',
       { status: 503, code: 'BACKUP_POOLER_NOT_SUPPORTED' }
     );
   }
@@ -170,7 +171,7 @@ async function getPgRestoreVersion() {
 }
 
 function buildDumpArgs(rawUrl, filePath, schemas, snapshot = null) {
-  const info = parsePostgresUrl(rawUrl, 'BACKUP_DATABASE_URL');
+  const info = parsePostgresUrl(normalizeBackupDatabaseUrl(rawUrl), 'BACKUP_DATABASE_URL');
   const includeOwners = process.env.BACKUP_PG_DUMP_INCLUDE_OWNERS === '1';
   const args = [
     '--format=custom',
