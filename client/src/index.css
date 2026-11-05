@@ -678,16 +678,9 @@
     color: #08755B;
   }
   .research-row-title span {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  @media (max-width: 700px) {
-    .research-row-title span {
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: break-word;
-    }
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    white-space: normal;
   }
   .research-row-author {
     @apply text-[13.5px];
