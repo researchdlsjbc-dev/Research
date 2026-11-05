@@ -14,7 +14,7 @@ function storageConfig() {
   const config = getConfig();
   if (!isStorageConfigured(config)) {
     throw new BackupError(
-      'Supabase Storage is not configured. Set SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, and SUPABASE_STORAGE_BUCKET.',
+      'Supabase Storage is not configured. Set SUPABASE_URL and a secret key (SUPABASE_SERVICE_ROLE_KEY or SUPABASE_SECRET_KEY). SUPABASE_STORAGE_BUCKET defaults to research-files.',
       { status: 503, code: 'STORAGE_NOT_CONFIGURED' }
     );
   }

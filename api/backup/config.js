@@ -46,9 +46,13 @@ function getConfig() {
     alertWebhookToken: firstEnv('BACKUP_ALERT_WEBHOOK_TOKEN'),
     triggerWebhookUrl: firstEnv('BACKUP_TRIGGER_WEBHOOK_URL'),
     triggerWebhookToken: firstEnv('BACKUP_TRIGGER_WEBHOOK_TOKEN'),
-    supabaseUrl: firstEnv('SUPABASE_URL'),
-    supabaseServiceKey: firstEnv('SUPABASE_SERVICE_ROLE_KEY'),
-    storageBucket: firstEnv('SUPABASE_STORAGE_BUCKET'),
+    supabaseUrl: firstEnv('SUPABASE_URL', 'NEXT_PUBLIC_SUPABASE_URL'),
+    supabaseServiceKey: firstEnv('SUPABASE_SERVICE_ROLE_KEY', 'SUPABASE_SECRET_KEY'),
+    // New Supabase API keys use sb_secret_* (SUPABASE_SECRET_KEY); the
+    // legacy service_role JWT stays supported via SUPABASE_SERVICE_ROLE_KEY.
+    // Bucket defaults to research-files (see .env.example) so a missing
+    // SUPABASE_STORAGE_BUCKET no longer blocks uploads when the bucket exists.
+    storageBucket: firstEnv('SUPABASE_STORAGE_BUCKET') || 'research-files',
     stagingDatabaseUrl: firstEnv('RESTORE_STAGING_DATABASE_URL'),
     backupDatabaseUrl: normalizeBackupDatabaseUrl(firstEnv('BACKUP_DATABASE_URL', 'DATABASE_URL')),
     productionDatabaseUrl: normalizeBackupDatabaseUrl(firstEnv('DATABASE_URL', 'BACKUP_DATABASE_URL')),
