@@ -150,7 +150,7 @@ export default function ResearchDetail() {
       {opening && <BookOpening title={research.title} authors={authors.join(', ')} type={research.type} />}
 
       <div
-        className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6"
+        className="mx-auto max-w-full sm:max-w-4xl px-3 sm:px-6 py-4 sm:py-8 space-y-6"
         style={{
           opacity: reveal ? 1 : 0,
           transform: reveal ? 'translateY(0)' : 'translateY(14px)',
@@ -158,7 +158,7 @@ export default function ResearchDetail() {
         }}
       >
         {/* Header with back button and actions */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-2 sm:gap-3">
           <Button variant="ghost" className="rounded-full gap-2" onClick={() => navigate(-1)}>
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back to Catalog</span>
@@ -215,7 +215,7 @@ export default function ResearchDetail() {
           {/* Top accent bar */}
           <div className="h-1.5 bg-gradient-to-r from-[#08755B] via-[#0C765E] to-[#8FB3A7]" />
 
-          <CardHeader className="pb-6 px-6 pt-6">
+          <CardHeader className="pb-5 px-4 sm:px-6 pt-5">
             <div className="flex flex-wrap items-center gap-3 mb-4">
               <Badge className={`capitalize border px-3 py-1.5 text-xs font-medium ${statusInfo.class}`}>
                 {statusInfo.label}
@@ -231,7 +231,7 @@ export default function ResearchDetail() {
             </div>
 
             <p className="eyebrow mb-2">Catalogued Research Work</p>
-            <CardTitle className="font-display text-3xl sm:text-4xl leading-tight text-[#103F37]">
+            <CardTitle className="font-display text-2xl sm:text-3xl lg:text-4xl leading-tight text-[#103F37]">
               {research.title}
             </CardTitle>
 
@@ -264,14 +264,14 @@ export default function ResearchDetail() {
 
           <CardContent className="space-y-6 px-6 pb-6">
             {/* Metadata Grid */}
-            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
               {detailRows.map((row, i) => {
                 const meta = rowMeta[row.key] || { icon: FileText, tint: 'bg-[#08755B]/15 text-[#0C765E]' };
                 const Icon = meta.icon;
                 return (
                   <div
                     key={row.key}
-                    className={`flex items-start gap-3 p-4 rounded-2xl border border-border/50 transition hover:border-emerald-200 hover:bg-emerald-50/50 ${i % 2 ? 'bg-white/50' : 'bg-[#FAFCFB]'}`}
+                    className={`flex items-start gap-2 p-3 sm:p-4 rounded-2xl border border-border/50 transition hover:border-emerald-200 hover:bg-emerald-50/50 ${i % 2 ? 'bg-white/50' : 'bg-[#FAFCFB]'}`}
                   >
                     <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${meta.tint}`}>
                       <Icon className="h-5 w-5" />
@@ -370,8 +370,8 @@ export default function ResearchDetail() {
             )}
 
             {/* Footer Actions */}
-            <div className="pt-4 border-t border-border/50 flex flex-wrap items-center justify-between gap-4">
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
+            <div className="pt-4 border-t border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-between gap-3 sm:gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
                   Added {new Date(research.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -382,12 +382,12 @@ export default function ResearchDetail() {
                   </span>
                 )}
               </div>
-              <div className="flex items-center gap-2">
-                <Button variant="outline" className="rounded-full gap-2" onClick={handleShare}>
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-2 w-full sm:w-auto">
+                <Button variant="outline" className="rounded-full gap-2 w-full sm:w-auto" onClick={handleShare}>
                   <Share2 className="h-4 w-4" /> Share
                 </Button>
                 {research.pdf_path && (
-                  <Button variant="outline" className="rounded-full gap-2" onClick={handleView}>
+                  <Button variant="outline" className="rounded-full gap-2 w-full sm:w-auto" onClick={handleView}>
                     <ExternalLink className="h-4 w-4" /> View
                   </Button>
                 )}
@@ -401,7 +401,7 @@ export default function ResearchDetail() {
       </div>
 
       <Dialog open={accessOpen} onOpenChange={setAccessOpen}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-[92vw] sm:max-w-md px-4 sm:px-6">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <KeyRound className="h-4 w-4 text-[#0C765E]" /> Enter Access Code
