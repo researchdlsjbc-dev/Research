@@ -945,8 +945,8 @@
   }
 
   .thumb {
-    width: 38px;
-    height: 48px;
+    width: 44px;
+    height: 52px;
     border-radius: 2px;
     flex-shrink: 0;
     box-shadow: 0 3px 8px rgba(20, 70, 55, 0.16);
@@ -955,6 +955,11 @@
     justify-content: center;
     text-align: center;
     padding: 4px;
+  }
+  .col-cover {
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
   .cell-title {
     font-family: "Cormorant Garamond", "Playfair Display", serif;
