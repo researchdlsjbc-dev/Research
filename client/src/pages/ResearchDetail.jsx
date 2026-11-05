@@ -121,7 +121,7 @@ export default function ResearchDetail() {
       {opening && <BookOpening title={research.title} authors={authors.join(', ')} type={research.type} />}
 
       <div
-        className="mx-auto max-w-full sm:max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6"
+        className="mx-auto max-w-5xl px-4 sm:px-6 py-6 sm:py-10 space-y-6"
         style={{
           opacity: reveal ? 1 : 0,
           transform: reveal ? 'translateY(0)' : 'translateY(14px)',
