@@ -842,10 +842,11 @@
 
   .table-scroll {
     overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
   .research-table {
     width: 100%;
-    min-width: 720px;
+    table-layout: fixed;
     border-collapse: collapse;
   }
   .research-table th {
@@ -855,15 +856,18 @@
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: #5D766E;
-    padding: 0 12px 10px;
+    padding: 12px 10px;
     border-bottom: 1px solid #E6EDE9;
+    white-space: nowrap;
   }
   .research-table td {
-    padding: 13px 12px;
+    padding: 12px 10px;
     border-bottom: 1px solid #EFF4F1;
     font-size: 12.5px;
     color: #55736C;
-    vertical-align: middle;
+    vertical-align: top;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .research-table tbody tr {
     transition: background 160ms ease;
@@ -1031,6 +1035,14 @@
   @media (max-width: 640px) {
     .stat-grid {
       grid-template-columns: minmax(0, 1fr);
+    }
+    /* Mobile: keep table scrollable and titles wrapping */
+    .research-table {
+      min-width: 550px;
+    }
+    .table-scroll {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
     }
   }
 
