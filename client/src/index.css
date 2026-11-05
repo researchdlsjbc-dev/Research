@@ -813,9 +813,34 @@
     background: #FFFFFF;
     border: 1px solid #E6EDE9;
     border-radius: 18px;
-    padding: 24px;
+    padding: 20px;
     max-width: 100%;
-    overflow-x: auto;
+    box-sizing: border-box;
+  }
+
+  /* Prevent horizontal scroll on entire page */
+  html, body {
+    overflow-x: hidden;
+  }
+
+  /* Collection rows: allow flex children to shrink below content size */
+  .collection-row {
+    min-width: 0;
+  }
+
+  /* Collection titles: wrap naturally instead of being truncated */
+  .collection-title {
+    white-space: normal;
+    overflow: visible;
+    text-overflow: unset;
+    display: block;
+  }
+
+  /* Mobile: allow table headers to wrap */
+  @media (max-width: 640px) {
+    .research-table th {
+      white-space: normal;
+    }
   }
   .icon-disc {
     @apply w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-emerald-brand;

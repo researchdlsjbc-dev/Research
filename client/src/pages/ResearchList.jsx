@@ -462,12 +462,12 @@ export default function ResearchList() {
                       No featured works yet.
                     </p>
                   ) : featured.map((r, i) => (
-                    <Link key={r.id} to={`/research/${r.id}`} className="collection-row">
+                    <Link key={r.id} to={`/research/${r.id}`} className="collection-row min-w-0">
                       <span className="thumb !h-[46px] !w-[36px]" style={{ background: coverGradient(i) }}>
                         <BookOpen className="h-3.5 w-3.5 text-white/80" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="collection-title block truncate">{r.title}</span>
+                        <span className="collection-title block">{r.title}</span>
                         <span className="collection-count block">{r.authors || 'Unattributed'}</span>
                       </span>
                       <ArrowRight className="collection-arrow h-3.5 w-3.5 shrink-0" />
@@ -488,13 +488,13 @@ export default function ResearchList() {
                       key={p.id}
                       type="button"
                       onClick={() => setFilter('program', program === p.code ? '' : p.code)}
-                      className={`collection-row w-full text-left ${program === p.code ? 'is-active' : ''}`}
+                      className={`collection-row min-w-0 w-full text-left ${program === p.code ? 'is-active' : ''}`}
                     >
                       <span className="thumb !h-[46px] !w-[36px]" style={{ background: coverGradient(i + 1) }}>
                         <FolderTree className="h-3.5 w-3.5 text-white/80" />
                       </span>
                       <span className="min-w-0 flex-1">
-                        <span className="collection-title block truncate">{p.name}</span>
+                        <span className="collection-title block">{p.name}</span>
                         <span className="collection-count block">{pluralize(counts[p.code] || 0, 'work')}</span>
                       </span>
                       <ArrowRight className="collection-arrow h-3.5 w-3.5 shrink-0" />
