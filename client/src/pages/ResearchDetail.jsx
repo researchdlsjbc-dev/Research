@@ -76,36 +76,7 @@ export default function ResearchDetail() {
 
   const handleView = async () => {
     if (!research.pdf_path) return;
-    if (isAdmin) {
-      try {
-        const { data } = await axios.get(`${API}/research/${id}/download`);
-        triggerView(data);
-      } catch (error) {
-        alert(error.response?.data?.error || 'No PDF is attached to this research yet.');
-      }
-      return;
-    }
-
-    const savedCode = sessionStorage.getItem(accessStorageKey);
-    if (savedCode) {
-      setAccessLoading(true);
-      try {
-        const { data } = await axios.post(`${API}/research/${id}/pdf/access`, { code: savedCode });
-        triggerView(data);
-        return;
-      } catch (error) {
-        if (error.response?.status === 401) {
-          sessionStorage.removeItem(accessStorageKey);
-        } else {
-          setAccessError(error.response?.data?.error || 'Unable to view this PDF.');
-          setAccessOpen(true);
-          return;
-        }
-      } finally {
-        setAccessLoading(false);
-      }
-    }
-
+    // Every view requires a valid access code — no admin bypass, no saved-code shortcut.
     setAccessError('');
     setAccessCode('');
     setAccessOpen(true);
