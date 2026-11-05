@@ -758,6 +758,9 @@
     gap: 24px;
     align-items: start;
   }
+  .catalog-layout > * {
+    min-width: 0;
+  }
   @media (max-width: 1024px) {
     .catalog-layout {
       grid-template-columns: 1fr;
@@ -1096,13 +1099,36 @@
     .stat-grid {
       grid-template-columns: minmax(0, 1fr);
     }
-    /* Mobile: keep table scrollable and titles wrapping */
+    /* Mobile: allow table to shrink to fit instead of forcing a wide min-width */
     .research-table {
-      min-width: 550px;
+      min-width: 0;
     }
     .table-scroll {
+      min-width: 0;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
+    }
+    /* Mobile: hide Actions column; title becomes the tap target */
+    .col-actions-header,
+    .col-actions {
+      display: none;
+    }
+    /* Mobile: title link is tap-enabled */
+    .title-link {
+      pointer-events: auto;
+      color: #08755B;
+      text-decoration: none;
+      display: block;
+    }
+  }
+  /* Desktop: title link looks like plain text, not clickable */
+  @media (min-width: 641px) {
+    .title-link {
+      pointer-events: none;
+      cursor: default;
+      color: inherit;
+      text-decoration: none;
+      display: block;
     }
   }
 

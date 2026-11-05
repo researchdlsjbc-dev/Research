@@ -418,8 +418,10 @@ export default function ResearchList() {
                             </div>
                           </td>
                           <td className="col-title">
-                            <div className="cell-title">{r.title}</div>
-                            {r.adviser && <div className="cell-author">Adviser: {r.adviser}</div>}
+                            <Link to={`/research/${r.id}`} className="title-link">
+                              <div className="cell-title">{r.title}</div>
+                              {r.adviser && <div className="cell-author">Adviser: {r.adviser}</div>}
+                            </Link>
                           </td>
                           <td className="col-program">
                             {r.program_name
