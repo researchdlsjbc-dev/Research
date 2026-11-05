@@ -712,6 +712,12 @@
     transform: translateX(2px);
   }
 
+  @media (min-width: 701px) {
+    .research-row {
+      grid-template-columns: 45% 15% 17% 12% 7% 4%;
+    }
+  }
+
   @media (max-width: 700px) {
     .research-row {
       grid-template-columns: 1fr auto auto;
@@ -860,6 +866,14 @@
     overflow: visible;
     text-overflow: unset;
     display: block;
+  }
+
+  /* Desktop: give the Latest Research title column more width on PC screens */
+  @media (min-width: 641px) {
+    .col-title-header,
+    .col-title {
+      width: 40%;
+    }
   }
 
   /* Mobile: allow table headers to wrap */
