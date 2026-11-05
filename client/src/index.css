@@ -475,7 +475,8 @@
 
   .program-card {
     position: relative;
-    height: 88px;
+    min-height: 88px;
+    height: auto;
     min-width: 0;
     padding: 14px 18px;
     border-radius: 10px;
@@ -499,10 +500,16 @@
   .program-name {
     @apply text-[12.5px] font-bold mt-2;
     color: #245D50;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0;
   }
   .program-count {
     @apply text-[11.5px] mt-0.5;
     color: #55766D;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0;
   }
   .program-arrow {
     position: absolute;
@@ -610,8 +617,13 @@
   }
 
   @media (max-width: 768px) {
+    .carousel-track {
+      width: 100%;
+    }
     .research-card {
-      width: 300px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
       height: 156px;
     }
   }
@@ -670,12 +682,18 @@
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  @media (max-width: 700px) {
+    .research-row-title span {
+      white-space: normal;
+      overflow-wrap: anywhere;
+      word-break: break-word;
+    }
+  }
   .research-row-author {
     @apply text-[13.5px];
     color: #667C75;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
   .program-badge {
     @apply inline-flex items-center rounded-full px-2 py-0.5 text-[12.5px] font-bold;
@@ -821,6 +839,12 @@
   /* Prevent horizontal scroll on entire page */
   html, body {
     overflow-x: hidden;
+  }
+
+  /* Never let replaced content (images, icons, SVG) break out of its container */
+  img, svg, video {
+    max-width: 100%;
+    height: auto;
   }
 
   /* Collection rows: allow flex children to shrink below content size */
