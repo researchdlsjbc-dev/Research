@@ -401,34 +401,34 @@ export default function ResearchList() {
                   <table className="research-table">
                     <thead>
                       <tr>
-                        <th style={{ width: 52 }}><span className="sr-only">Cover</span></th>
-                        <th>Title</th>
-                        <th>Program</th>
-                        <th>Year</th>
-                        <th>Date Added</th>
-                        <th>Actions</th>
+                        <th style={{ width: 52 }} className="sr-only col-cover-header"><span className="sr-only">Cover</span></th>
+                        <th className="col-title-header">Title</th>
+                        <th className="col-program-header">Program</th>
+                        <th className="col-year-header">Year</th>
+                        <th className="col-date-header">Date Added</th>
+                        <th className="col-actions-header">Actions</th>
                       </tr>
                     </thead>
                     <tbody>
                       {sorted.map((r, i) => (
                         <tr key={r.id}>
-                          <td>
+                          <td className="col-cover">
                             <div className="thumb" style={{ background: coverGradient(i) }}>
                               <BookOpen className="h-4 w-4 text-white/80" />
                             </div>
                           </td>
-                          <td>
+                          <td className="col-title">
                             <div className="cell-title">{r.title}</div>
                             {r.adviser && <div className="cell-author">Adviser: {r.adviser}</div>}
                           </td>
-                          <td>
+                          <td className="col-program">
                             {r.program_name
                               ? <span className="program-pill">{r.program_name}</span>
                               : <span className="text-[13px] text-[#A3B5AF]">—</span>}
                           </td>
-                          <td><span className="text-[14px]">{r.year || '—'}</span></td>
-                          <td><span className="text-[14px]">{formatDate(r.created_at) || '—'}</span></td>
-                          <td>
+                          <td className="col-year"><span className="text-[14px]">{r.year || '—'}</span></td>
+                          <td className="col-date"><span className="text-[14px]">{formatDate(r.created_at) || '—'}</span></td>
+                          <td className="col-actions">
                             <Link to={`/research/${r.id}`} className="view-details inline-flex items-center gap-1 text-[13.5px] font-semibold">
                               View Details <ArrowRight className="h-3 w-3" />
                             </Link>

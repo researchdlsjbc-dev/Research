@@ -1911,5 +1911,28 @@
     .collection-row:active {
       background: #F3F8F5;
     }
+
+    /* Mobile: only title + view details in the results table */
+    .col-cover,
+    .col-cover-header,
+    .col-program,
+    .col-program-header,
+    .col-year,
+    .col-year-header,
+    .col-date,
+    .col-date-header {
+      display: none;
+    }
+
+    .col-title {
+      font-size: 16px;
+      font-weight: 700;
+      padding-left: 8px;
+    }
+
+    .col-actions {
+      text-align: right;
+      padding-right: 8px;
+    }
   }
 }
