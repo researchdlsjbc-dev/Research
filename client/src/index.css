@@ -1825,4 +1825,91 @@
       transition-duration: 0.01ms !important;
     }
   }
+
+  /* ================================================================
+     Browse catalog - mobile polish
+     ================================================================ */
+  @media (max-width: 640px) {
+    .catalog-layout {
+      gap: 16px;
+    }
+    .catalog-hero .container-page {
+      padding-top: 72px;
+      padding-bottom: 104px;
+    }
+    .catalog-title {
+      font-size: 32px;
+    }
+    .catalog-search-input {
+      font-size: 14px;
+      height: 44px;
+    }
+    .advanced-filter-button {
+      height: 44px;
+      padding: 0 14px;
+      font-size: 12.5px;
+      white-space: normal;
+      text-align: center;
+      width: 100%;
+    }
+
+    .stat-pill {
+      padding: 7px 12px;
+      gap: 8px;
+    }
+    .stat-number {
+      font-size: 20px;
+    }
+
+    .section-title {
+      font-size: 20px;
+    }
+    .section-sub {
+      font-size: 13.5px;
+    }
+
+    .research-table {
+      min-width: 560px;
+    }
+    .research-table th,
+    .research-table td {
+      padding: 8px 10px;
+      font-size: 11.5px;
+    }
+    .research-table th {
+      font-size: 10px;
+      padding-bottom: 8px;
+    }
+    .cell-title {
+      font-size: 15px;
+    }
+    .cell-author {
+      font-size: 12px;
+    }
+    .program-pill {
+      font-size: 11px;
+      padding: 0 8px;
+    }
+
+    .pagination {
+      margin-top: 1rem;
+      gap: 10px;
+    }
+    .page-btn {
+      min-width: 28px;
+      height: 28px;
+      padding: 0 6px;
+      font-size: 12.5px;
+    }
+
+    .view-details:active {
+      transform: scale(0.96);
+    }
+    .program-badge:active {
+      transform: scale(0.96);
+    }
+    .collection-row:active {
+      background: #F3F8F5;
+    }
+  }
 }

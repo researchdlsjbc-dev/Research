@@ -216,7 +216,7 @@ export default function ResearchList() {
             </p>
 
             <form onSubmit={applySearch} className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
-              <div className="relative flex-1 sm:flex-none">
+              <div className="relative flex-1 sm:flex-none min-w-0">
                 <label htmlFor="catalog-search" className="sr-only">Search all works</label>
                 <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[#0C765E]">
                   <Search className="h-[17px] w-[17px]" />
@@ -232,7 +232,7 @@ export default function ResearchList() {
               </div>
               <button
                 type="button"
-                className="advanced-filter-button justify-center"
+                className="advanced-filter-button w-full sm:w-auto"
                 aria-expanded={showFilters}
                 aria-controls="advanced-filters"
                 onClick={() => setShowFilters(v => !v)}
@@ -271,13 +271,13 @@ export default function ResearchList() {
                   </div>
                 </div>
 
-                <div className="mt-4 flex items-center justify-between gap-3 border-t border-[#EFF4F1] pt-3">
-                  <button type="submit" onClick={applySearch} className="hero-cta">Apply Filters</button>
+                <div className="mt-4 flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-between gap-3 border-t border-[#EFF4F1] pt-3 w-full">
+                  <button type="submit" onClick={applySearch} className="hero-cta w-full sm:w-auto">Apply Filters</button>
                   {hasFilters && (
                     <button
                       type="button"
                       onClick={clearAll}
-                      className="inline-flex items-center gap-1.5 text-[13.5px] font-semibold text-muted-green transition hover:text-forest"
+                      className="inline-flex items-center justify-center gap-1.5 text-[13.5px] font-semibold text-muted-green transition hover:text-forest w-full sm:w-auto"
                     >
                       <X className="h-3.5 w-3.5" /> Clear all
                     </button>
@@ -325,7 +325,7 @@ export default function ResearchList() {
           <div className="catalog-layout">
             {/* ---------- RESULTS ---------- */}
             <section className="latest-research-card">
-              <div className="flex flex-wrap items-start justify-between gap-4">
+              <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between sm:justify-between gap-3 sm:gap-4">
                 <div className="flex items-center gap-3">
                   <span className="icon-disc">
                     <FileText className="h-4 w-4" />
