@@ -833,6 +833,7 @@
     border-radius: 18px;
     padding: 20px;
     max-width: 100%;
+    min-width: 0;
     box-sizing: border-box;
   }
 
@@ -986,10 +987,14 @@
     border: 1px solid #E6EDE9;
     border-radius: 14px;
     padding: 20px;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
 
   .collection-row {
     @apply flex items-center gap-3 py-3 transition;
+    min-width: 0;
   }
   .collection-row + .collection-row {
     border-top: 1px solid #F0F5F2;
@@ -1007,10 +1012,16 @@
   .collection-title {
     @apply text-[14px] font-semibold transition;
     color: #245D50;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0;
   }
   .collection-count {
     @apply text-[12.5px];
     color: #7A9189;
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    min-width: 0;
   }
   .collection-arrow {
     color: #8FB3A7;
