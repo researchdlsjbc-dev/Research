@@ -62,6 +62,11 @@
   .container-page {
     @apply w-full max-w-5xl mx-auto px-3 sm:px-6 lg:px-8;
   }
+  @media (min-width: 1024px) {
+    .container-page {
+      max-width: 1400px;
+    }
+  }
 
   /* ================================================================
      Typography
