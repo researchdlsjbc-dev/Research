@@ -11,7 +11,7 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import BookOpening from '../components/BookOpening';
 import LockedAbstract from '../components/LockedAbstract';
-import { ArrowLeft, Users, Award, FolderTree, Calendar, FileText, Tags, CheckCircle2, XCircle, BookOpen, Download, Share2, Bookmark, ExternalLink, ChevronDown, ChevronUp, KeyRound, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Award, FolderTree, Calendar, FileText, Tags, CheckCircle2, XCircle, BookOpen, Share2, Bookmark, ExternalLink, ChevronDown, ChevronUp, KeyRound, Loader2 } from 'lucide-react';
 
 const rowMeta = {
   adviser: { icon: Award, tint: 'bg-amber-100 text-amber-700' },
@@ -69,24 +69,17 @@ export default function ResearchDetail() {
     { key: 'year', label: 'Year', value: research.year },
   ];
 
-  const triggerDownload = (data) => {
-    if (!data?.url) throw new Error('No download link was returned.');
-    const link = document.createElement('a');
-    link.href = data.url;
-    link.download = data.file_name || `${research.title}.pdf`;
-    link.rel = 'noopener';
-    link.target = '_blank';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
+  const triggerView = (data) => {
+    if (!data?.url) throw new Error('No view link was returned.');
+    window.open(data.url, '_blank', 'noopener');
   };
 
-  const handleDownload = async () => {
+  const handleView = async () => {
     if (!research.pdf_path) return;
     if (isAdmin) {
       try {
         const { data } = await axios.get(`${API}/research/${id}/download`);
-        triggerDownload(data);
+        triggerView(data);
       } catch (error) {
         alert(error.response?.data?.error || 'No PDF is attached to this research yet.');
       }
@@ -98,13 +91,13 @@ export default function ResearchDetail() {
       setAccessLoading(true);
       try {
         const { data } = await axios.post(`${API}/research/${id}/pdf/access`, { code: savedCode });
-        triggerDownload(data);
+        triggerView(data);
         return;
       } catch (error) {
         if (error.response?.status === 401) {
           sessionStorage.removeItem(accessStorageKey);
         } else {
-          setAccessError(error.response?.data?.error || 'Unable to download this PDF.');
+          setAccessError(error.response?.data?.error || 'Unable to view this PDF.');
           setAccessOpen(true);
           return;
         }
@@ -125,7 +118,7 @@ export default function ResearchDetail() {
     try {
       const { data } = await axios.post(`${API}/research/${id}/pdf/access`, { code: accessCode });
       sessionStorage.setItem(accessStorageKey, accessCode);
-      triggerDownload(data);
+      triggerView(data);
       setAccessOpen(false);
       setAccessCode('');
     } catch (error) {
@@ -185,10 +178,10 @@ export default function ResearchDetail() {
                 variant="outline"
                 size="icon"
                 className="rounded-full"
-                onClick={handleDownload}
-                aria-label="Download PDF"
+                onClick={handleView}
+                aria-label="View PDF"
               >
-                <Download className="h-4 w-4" />
+                <ExternalLink className="h-4 w-4" />
               </Button>
             )}
             <Button
@@ -394,8 +387,8 @@ export default function ResearchDetail() {
                   <Share2 className="h-4 w-4" /> Share
                 </Button>
                 {research.pdf_path && (
-                  <Button variant="outline" className="rounded-full gap-2" onClick={handleDownload}>
-                    <Download className="h-4 w-4" /> Download
+                  <Button variant="outline" className="rounded-full gap-2" onClick={handleView}>
+                    <ExternalLink className="h-4 w-4" /> View
                   </Button>
                 )}
               </div>
@@ -414,7 +407,7 @@ export default function ResearchDetail() {
               <KeyRound className="h-4 w-4 text-[#0C765E]" /> Enter Access Code
             </DialogTitle>
             <DialogDescription>
-              This complete paper is protected. Enter the access code provided with the research to download the PDF.
+              This complete paper is protected. Enter the access code provided with the research to view the PDF.
             </DialogDescription>
           </DialogHeader>
           <form onSubmit={handleAccessSubmit} className="space-y-4">
@@ -433,7 +426,7 @@ export default function ResearchDetail() {
             {accessError && <p className="text-[12.5px] font-medium text-red-600">{accessError}</p>}
             <div className="flex gap-2">
               <Button type="submit" disabled={accessLoading || !accessCode.trim()} className="gradient-btn flex-1 rounded-full">
-                {accessLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />} Download PDF
+                {accessLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />} View PDF
               </Button>
               <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5]" onClick={() => setAccessOpen(false)}>
                 Cancel

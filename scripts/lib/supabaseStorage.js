@@ -198,9 +198,8 @@ async function createSignedDownloadUrl(config, objectPath, expiresIn = 60, downl
   }, { context: 'Supabase Storage signed download URL' });
   const data = await response.json().catch(() => ({}));
   let signedUrl = absoluteStorageUrl(config, data.signedURL || data.signedUrl);
-  if (signedUrl && downloadName) {
-    signedUrl += `${signedUrl.includes('?') ? '&' : '?'}download=${encodeURIComponent(downloadName)}`;
-  }
+  // Do not append ?download= so the browser renders the PDF inline (view-only)
+  // instead of forcing a download.
   return signedUrl;
 }
 
