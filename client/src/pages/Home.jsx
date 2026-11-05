@@ -381,7 +381,7 @@ export default function Home() {
                 <span className="text-[12.5px] font-bold uppercase tracking-[0.10em] text-[#176653]">Quick Access</span>
                 <span className="h-px w-[28px] bg-[#8FB3A7]" />
               </div>
-              <h2 className="section-title mt-3.5 text-[37px] leading-none">Explore. Read. Grow.</h2>
+              <h2 className="section-title mt-3.5 text-[24px] sm:text-[37px]">Explore. Read. Grow.</h2>
             </div>
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
@@ -460,7 +460,7 @@ export default function Home() {
                 <span>Browse by Category</span>
                 <span className="h-px w-[25px] bg-[#8FB3A7]" />
               </div>
-              <h2 className="section-title mt-2 text-[36px]">Find research by program.</h2>
+              <h2 className="section-title mt-2 text-[22px] sm:text-[36px]">Find research by program.</h2>
             </div>
             <Link to="/research" className="view-programs">
               <span>View All Programs</span>
@@ -501,7 +501,7 @@ export default function Home() {
                   <span>Featured Collections</span>
                   <span className="h-px w-[25px] bg-[#8FB3A7]" />
                 </div>
-                <h2 className="section-title mt-2 text-[40px]">Featured Research Works</h2>
+                <h2 className="section-title mt-2 text-[24px] sm:text-[40px]">Featured Research Works</h2>
               </div>
               <Link to="/research" className="view-programs !text-[14.5px]">
                 <span>View All</span>
@@ -523,7 +523,7 @@ export default function Home() {
                 <span>Recent Submissions</span>
                 <span className="h-px w-[25px] bg-[#8FB3A7]" />
               </div>
-              <h2 className="section-title mt-1.5 text-[40px]">Latest Added Research</h2>
+              <h2 className="section-title mt-1.5 text-[24px] sm:text-[40px]">Latest Added Research</h2>
             </div>
             <Link to="/research" className="view-programs !text-[14.5px]">
               <span>View All</span>
