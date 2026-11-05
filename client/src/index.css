@@ -814,6 +814,8 @@
     border: 1px solid #E6EDE9;
     border-radius: 18px;
     padding: 24px;
+    max-width: 100%;
+    overflow-x: auto;
   }
   .icon-disc {
     @apply w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-emerald-brand;

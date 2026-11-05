@@ -321,7 +321,7 @@ export default function ResearchList() {
 
       {/* ================= CATALOG CONTENT ================= */}
       <main className="relative z-10 -mt-6">
-        <div className="container-page py-10">
+        <div className="container-page pb-10">
           <div className="catalog-layout">
             {/* ---------- RESULTS ---------- */}
             <section className="latest-research-card">
