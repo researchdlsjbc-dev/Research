@@ -121,7 +121,7 @@ export default function ResearchDetail() {
       {opening && <BookOpening title={research.title} authors={authors.join(', ')} type={research.type} />}
 
       <div
-        className="mx-auto max-w-full sm:max-w-4xl px-3 sm:px-6 py-4 sm:py-8 space-y-6"
+        className="mx-auto max-w-full sm:max-w-4xl px-4 sm:px-6 py-6 sm:py-10 space-y-6"
         style={{
           opacity: reveal ? 1 : 0,
           transform: reveal ? 'translateY(0)' : 'translateY(14px)',
@@ -134,11 +134,11 @@ export default function ResearchDetail() {
             <ArrowLeft className="h-4 w-4" />
             <span className="hidden sm:inline">Back to Catalog</span>
           </Button>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-3">
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full"
+              className="rounded-full active:bg-emerald-50/50"
               onClick={handleShare}
               aria-label="Share research"
             >
@@ -148,7 +148,7 @@ export default function ResearchDetail() {
               <Button
                 variant="outline"
                 size="icon"
-                className="rounded-full"
+                className="rounded-full active:bg-emerald-50/50"
                 onClick={handleView}
                 aria-label="View PDF"
               >
@@ -158,21 +158,21 @@ export default function ResearchDetail() {
             <Button
               variant="outline"
               size="icon"
-              className="rounded-full"
+              className="rounded-full active:bg-emerald-50/50"
               onClick={() => setIsBookmarked(!isBookmarked)}
               aria-label={isBookmarked ? 'Remove bookmark' : 'Bookmark research'}
             >
               <Bookmark className={`h-4 w-4 ${isBookmarked ? 'fill-emerald-600 text-emerald-600' : ''}`} />
             </Button>
             {isAdmin && (
-              <div className="flex gap-2 ml-2 border-l border-border pl-2">
+              <div className="flex flex-col sm:flex-row gap-2 ml-2 border-l border-border pl-2 w-full sm:w-auto">
                 {research.status !== 'approved' && (
-                  <Button className="gradient-btn rounded-full gap-2" onClick={() => { axios.patch(`${API}/research/${id}/status`, { status: 'approved' }).then(r => setResearch(r.data)); }}>
+                  <Button className="gradient-btn rounded-full gap-2 w-full sm:w-auto" onClick={() => { axios.patch(`${API}/research/${id}/status`, { status: 'approved' }).then(r => setResearch(r.data)); }}>
                     <CheckCircle2 className="h-4 w-4" /> Approve
                   </Button>
                 )}
                 {research.status !== 'rejected' && (
-                  <Button variant="destructive" className="rounded-full gap-2" onClick={() => { axios.patch(`${API}/research/${id}/status`, { status: 'rejected' }).then(r => setResearch(r.data)); }}>
+                  <Button variant="destructive" className="rounded-full gap-2 w-full sm:w-auto" onClick={() => { axios.patch(`${API}/research/${id}/status`, { status: 'rejected' }).then(r => setResearch(r.data)); }}>
                     <XCircle className="h-4 w-4" /> Reject
                   </Button>
                 )}
@@ -207,12 +207,12 @@ export default function ResearchDetail() {
             </CardTitle>
 
             {/* Authors */}
-            <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
+            <div className="mt-4 flex flex-wrap items-center gap-2 text-sm">
               <span className="text-[#607B72]">By</span>
               <div className="flex flex-wrap gap-2">
                 {authorDetails.length > 0 ? (
                   authorDetails.map((ad, i) => (
-                    <Link key={ad.id} to={`/author/${ad.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-border shadow-sm text-sm font-medium hover:bg-soft-green hover:text-forest transition">
+                    <Link key={ad.id} to={`/author/${ad.id}`} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-border shadow-sm text-sm font-medium hover:bg-soft-green active:bg-soft-green active:text-forest transition">
                       <span className="h-5 w-5 rounded-full bg-[#08755B]/20 text-[#0C765E] flex items-center justify-center text-[10px] font-bold font-mono">
                         {ad.name.charAt(0).toUpperCase()}
                       </span>
@@ -221,7 +221,7 @@ export default function ResearchDetail() {
                   ))
                 ) : (
                   authors.map((a, i) => (
-                    <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-border shadow-sm text-sm font-medium">
+                    <span key={i} className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-white/80 border border-border shadow-sm text-sm font-medium active:bg-soft-green active:text-forest transition">
                       <span className="h-5 w-5 rounded-full bg-[#08755B]/20 text-[#0C765E] flex items-center justify-center text-[10px] font-bold font-mono">
                         {a.charAt(0).toUpperCase()}
                       </span>
@@ -242,7 +242,7 @@ export default function ResearchDetail() {
                 return (
                   <div
                     key={row.key}
-                    className={`flex items-start gap-2 p-3 sm:p-4 rounded-2xl border border-border/50 transition hover:border-emerald-200 hover:bg-emerald-50/50 ${i % 2 ? 'bg-white/50' : 'bg-[#FAFCFB]'}`}
+                    className={`flex items-start gap-2 p-3 sm:p-4 rounded-2xl border border-border/50 transition hover:border-emerald-200 hover:bg-emerald-50/50 active:border-emerald-200 active:bg-emerald-50/50 ${i % 2 ? 'bg-white/50' : 'bg-[#FAFCFB]'}`}
                   >
                     <div className={`h-10 w-10 rounded-xl flex items-center justify-center shrink-0 ${meta.tint}`}>
                       <Icon className="h-5 w-5" />
@@ -281,14 +281,14 @@ export default function ResearchDetail() {
             {/* Abstract Section */}
             {research.abstract && (
               <div className="pt-4 border-t border-border/50">
-                <div className="flex items-center justify-between mb-4">
-                  <p className="text-sm font-semibold text-[#0C765E] flex items-center gap-1.5">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-between gap-3 sm:gap-0 mb-4">
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto">
                     <BookOpen className="h-4 w-4" /> Abstract
-                  </p>
+                  </div>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="gap-1.5 text-xs font-medium"
+                    className="gap-1.5 text-xs sm:text-sm font-medium w-full sm:w-auto"
                     onClick={() => setShowFullAbstract(!showFullAbstract)}
                   >
                     {showFullAbstract ? (
@@ -308,30 +308,30 @@ export default function ResearchDetail() {
                 <p className="text-sm font-semibold text-muted-foreground mb-4 flex items-center gap-1.5">
                   <FileText className="h-4 w-4" /> Additional Information
                 </p>
-                <div className="grid sm:grid-cols-2 gap-4">
+                <div className="grid sm:grid-cols-2 gap-3 sm:gap-4">
                   {research.doi && (
-                    <div className="p-4 rounded-2xl bg-white/50 border border-border/50">
+                    <div className="p-3 sm:p-4 rounded-2xl bg-white/50 border border-border/50">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">DOI</p>
-                      <a href={`https://doi.org/${research.doi}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-emerald-700 flex items-center gap-1.5 hover:underline">
+                      <a href={`https://doi.org/${research.doi}`} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-emerald-700 flex items-center gap-1.5 hover:underline active:text-emerald-600">
                         {research.doi}
                         <ExternalLink className="h-3.5 w-3.5" />
                       </a>
                     </div>
                   )}
                   {research.publication_venue && (
-                    <div className="p-4 rounded-2xl bg-white/50 border border-border/50">
+                    <div className="p-3 sm:p-4 rounded-2xl bg-white/50 border border-border/50">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Publication Venue</p>
                       <p className="text-sm font-medium text-foreground">{research.publication_venue}</p>
                     </div>
                   )}
                   {research.funding_source && (
-                    <div className="p-4 rounded-2xl bg-white/50 border border-border/50">
+                    <div className="p-3 sm:p-4 rounded-2xl bg-white/50 border border-border/50">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Funding Source</p>
                       <p className="text-sm font-medium text-foreground">{research.funding_source}</p>
                     </div>
                   )}
                   {research.pages && (
-                    <div className="p-4 rounded-2xl bg-white/50 border border-border/50">
+                    <div className="p-3 sm:p-4 rounded-2xl bg-white/50 border border-border/50">
                       <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide mb-1">Pages</p>
                       <p className="text-sm font-medium text-foreground">{research.pages}</p>
                     </div>
@@ -342,7 +342,7 @@ export default function ResearchDetail() {
 
             {/* Footer Actions */}
             <div className="pt-4 border-t border-border/50 flex flex-col sm:flex-row items-start sm:items-center justify-between sm:justify-between gap-3 sm:gap-4">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-sm text-muted-foreground">
+              <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4 text-xs sm:text-sm text-muted-foreground">
                 <span className="flex items-center gap-1.5">
                   <Calendar className="h-3.5 w-3.5" />
                   Added {new Date(research.created_at).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
@@ -395,11 +395,11 @@ export default function ResearchDetail() {
               />
             </div>
             {accessError && <p className="text-[12.5px] font-medium text-red-600">{accessError}</p>}
-            <div className="flex gap-2">
-              <Button type="submit" disabled={accessLoading || !accessCode.trim()} className="gradient-btn flex-1 rounded-full">
+            <div className="flex flex-col sm:flex-row gap-2 w-full">
+              <Button type="submit" disabled={accessLoading || !accessCode.trim()} className="gradient-btn flex-1 rounded-full w-full sm:w-auto">
                 {accessLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ExternalLink className="h-4 w-4" />} View PDF
               </Button>
-              <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5]" onClick={() => setAccessOpen(false)}>
+              <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5] w-full sm:w-auto" onClick={() => setAccessOpen(false)}>
                 Cancel
               </Button>
             </div>
