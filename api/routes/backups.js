@@ -1,5 +1,6 @@
 const crypto = require('crypto');
 const express = require('express');
+const pool = require('../db');
 const store = require('../backup/store');
 const { ensureBackupSchema } = require('../backup/schema');
 const { authenticateToken, requireAdmin } = require('../middleware/auth');
@@ -32,6 +33,18 @@ const {
 const { cutoffYearFor } = require('../backup/archive');
 const { runJobsInline } = require('../../scripts/lib/workerRunner');
 const { isPgDumpAvailable } = require('../../scripts/lib/pgTools');
+const {
+  dumpDatabaseToJson,
+  validateDownloadablePayload,
+  getInsertOrder,
+  insertRows,
+  resetSequences,
+  encryptBuffer,
+  decryptBuffer,
+  tempDir,
+  cleanup,
+  tableIdent
+} = require('../backup/dumpRestore');
 
 const router = express.Router();
 
@@ -938,6 +951,139 @@ router.delete('/:id', async (req, res) => {
   } catch (err) {
     const publicError = toPublicError(err);
     res.status(publicError.status).json(publicError.body);
+  }
+});
+
+router.post('/downloadable', async (req, res) => {
+  let client = null;
+  let temp = null;
+  try {
+    const config = getConfig();
+    if (!config.backupDatabaseUrl && !config.productionDatabaseUrl) {
+      throw new BackupError('Database URL is not configured.', {
+        status: 503,
+        code: 'DATABASE_URL_MISSING'
+      });
+    }
+
+    client = await pool.connect();
+    await client.query('BEGIN');
+    await client.query('SET TRANSACTION ISOLATION LEVEL REPEATABLE READ READ ONLY');
+    const payload = await dumpDatabaseToJson(client);
+    await client.query('COMMIT');
+    await client.release();
+    client = null;
+
+    const rowCount = payload.tables.reduce((sum, table) => sum + table.rows.length, 0);
+    const json = Buffer.from(JSON.stringify(payload), 'utf8');
+
+    temp = await tempDir();
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    const fileName = `researchhub-backup-${timestamp}`;
+    const { buffer, fileName: outName, encrypted } = await encryptBuffer(json, temp, fileName);
+
+    await store.logAudit({
+      adminId: req.user.id,
+      action: 'backup.downloadable.created',
+      targetType: 'backup',
+      targetId: null,
+      req,
+      details: {
+        tables: payload.tables.length,
+        rows: rowCount,
+        encrypted,
+        file_name: outName
+      }
+    });
+
+    res.set('Cache-Control', 'no-store, max-age=0');
+    res.set('Content-Type', 'application/octet-stream');
+    res.set('Content-Disposition', `attachment; filename="${safeFileName(outName)}"`);
+    res.set('Content-Length', String(buffer.length));
+    res.send(buffer);
+  } catch (err) {
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch (_) {}
+    }
+    const publicError = toPublicError(err);
+    if (!res.headersSent) res.status(publicError.status).json(publicError.body);
+    else res.destroy();
+  } finally {
+    if (client) client.release();
+    if (temp) await cleanup(temp);
+  }
+});
+
+router.post('/restore-upload', async (req, res) => {
+  let client = null;
+  let temp = null;
+  try {
+    if (!req.body || req.body.confirm !== 'RESTORE') {
+      throw new BackupError('Type RESTORE to confirm replacing the database with this backup.', {
+        status: 400,
+        code: 'RESTORE_CONFIRMATION_REQUIRED'
+      });
+    }
+
+    const raw = req.body.backup || req.body.file || req.body.data;
+    if (typeof raw !== 'string' || !raw.length) {
+      throw new BackupError('No backup file was provided.', { status: 400, code: 'NO_BACKUP_FILE' });
+    }
+
+    const base64 = String(raw).replace(/^data:.*;base64,/, '');
+    const buffer = Buffer.from(base64, 'base64');
+
+    temp = await tempDir();
+    const plaintext = await decryptBuffer(buffer, temp, 'restore-upload');
+    const payload = validateDownloadablePayload(JSON.parse(plaintext.toString('utf8')));
+
+    client = await pool.connect();
+    await client.query('BEGIN');
+
+    const tableNames = payload.tables.map((table) => table.name);
+    if (tableNames.length) {
+      await client.query(
+        `TRUNCATE ${tableNames.map((name) => tableIdent('public', name)).join(', ')} RESTART IDENTITY CASCADE`
+      );
+    }
+
+    const order = await getInsertOrder(client, tableNames);
+    const byName = new Map(payload.tables.map((table) => [table.name, table]));
+    for (const name of order) {
+      const table = byName.get(name);
+      if (!table) continue;
+      await insertRows(client, name, table.columns, table.rows);
+    }
+
+    await resetSequences(client, tableNames);
+    await client.query('COMMIT');
+    await client.release();
+    client = null;
+
+    await store.logAudit({
+      adminId: req.user.id,
+      action: 'backup.downloadable.restored',
+      targetType: 'backup',
+      targetId: null,
+      req,
+      details: { tables: payload.tables.length }
+    });
+
+    res.json({
+      ok: true,
+      restored_tables: tableNames.length,
+      message: 'Database restored from the uploaded backup.'
+    });
+  } catch (err) {
+    if (client) {
+      try { await client.query('ROLLBACK'); } catch (_) {}
+    }
+    const publicError = toPublicError(err);
+    if (!res.headersSent) res.status(publicError.status).json(publicError.body);
+    else res.destroy();
+  } finally {
+    if (client) client.release();
+    if (temp) await cleanup(temp);
   }
 });
 

@@ -5,7 +5,7 @@ const cors = require('cors');
 const app = express();
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ limit: '100mb' }));
 
 app.use('/api/auth/google', require('./routes/google'));
 app.use('/api/auth', require('./routes/auth'));

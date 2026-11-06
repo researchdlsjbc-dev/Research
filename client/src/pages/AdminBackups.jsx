@@ -77,6 +77,8 @@ export default function AdminBackups() {
   const [archiveDeleteConfirm, setArchiveDeleteConfirm] = useState('');
   const [archiveRestoreTarget, setArchiveRestoreTarget] = useState(null);
   const [archiveRestoreConfirm, setArchiveRestoreConfirm] = useState('');
+  const [restoreUploadFile, setRestoreUploadFile] = useState(null);
+  const [restoreUploadConfirm, setRestoreUploadConfirm] = useState('');
   const settingsDirtyRef = useRef(false);
 
   const applyOverview = (data) => {
@@ -306,6 +308,92 @@ export default function AdminBackups() {
         }
       }
       setError(message || 'Unable to download this backup. Large backups may need the worker CLI.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  const downloadDownloadableBackup = async () => {
+    setBusy('downloadable-download');
+    setError('');
+    try {
+      const response = await axios.post(`${API}/backups/downloadable`, {}, {
+        responseType: 'blob',
+        timeout: 300000
+      });
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement('a');
+      const disposition = response.headers['content-disposition'] || '';
+      const match = disposition.match(/filename="([^"]+)"/);
+      link.href = url;
+      link.download = match ? match[1] : 'researchhub-backup.json.enc';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      setNotice('Backup file downloaded. Keep this file somewhere safe.');
+    } catch (err) {
+      let message = err.response?.data?.error;
+      if (!message && err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          message = JSON.parse(text).error;
+        } catch (_) {
+          message = null;
+        }
+      }
+      setError(message || 'Unable to create the downloadable backup.');
+    } finally {
+      setBusy('');
+    }
+  };
+
+  const handleRestoreUploadFile = (event) => {
+    setRestoreUploadFile(event.target.files[0] || null);
+    setRestoreUploadConfirm('');
+  };
+
+  const uploadAndRestore = async () => {
+    if (!restoreUploadFile) {
+      setError('Choose a backup file first.');
+      return;
+    }
+    if (restoreUploadConfirm !== 'RESTORE') {
+      setError('Type RESTORE to confirm.');
+      return;
+    }
+    setBusy('downloadable-restore');
+    setError('');
+    try {
+      const dataUrl = await readFileAsDataUrl(restoreUploadFile);
+      const response = await axios.post(`${API}/backups/restore-upload`, {
+        confirm: 'RESTORE',
+        backup: dataUrl
+      }, { timeout: 600000 });
+      setNotice(response.data.message || 'Database restored from the uploaded backup.');
+      setRestoreUploadFile(null);
+      setRestoreUploadConfirm('');
+      await load();
+    } catch (err) {
+      let message = err.response?.data?.error;
+      if (!message && err.response?.data instanceof Blob) {
+        try {
+          const text = await err.response.data.text();
+          message = JSON.parse(text).error;
+        } catch (_) {
+          message = null;
+        }
+      }
+      setError(message || 'Unable to restore from this backup file.');
     } finally {
       setBusy('');
     }
@@ -753,6 +841,73 @@ export default function AdminBackups() {
               )}
             </tbody>
           </table>
+        </div>
+      </div>
+
+      <div className="admin-panel overflow-hidden">
+        <div className="admin-panel-head">
+          <h2 className="admin-panel-title"><Download className="h-4 w-4 text-emerald-brand" /> Downloadable backup file</h2>
+          <p className="mt-1 text-[12.5px] text-muted-green">
+            Download a single file containing the whole database. Upload it back here to restore.
+          </p>
+        </div>
+        <div className="admin-panel-body space-y-4">
+          <div className="rounded-xl border border-[#E6EDE9] bg-ivory p-4">
+            <p className="text-[12.5px] text-muted-green">
+              The file includes all application data (users, programs, research, authors). Restoring replaces the current
+              database with the backup contents.
+            </p>
+            {configured.encryption ? (
+              <p className="mt-1 text-[12.5px] text-[#0C765E]">The file is encrypted with the server backup key.</p>
+            ) : (
+              <p className="mt-1 text-[12.5px] text-amber-900">
+                No backup encryption key is set; the file is stored plaintext.
+              </p>
+            )}
+          </div>
+
+          <div className="flex flex-wrap gap-2">
+            <Button
+              className="gradient-btn rounded-full"
+              onClick={downloadDownloadableBackup}
+              disabled={busy === 'downloadable-download'}
+            >
+              {busy === 'downloadable-download' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+              Download backup file
+            </Button>
+          </div>
+
+          <div className="rounded-xl border border-[#E6EDE9] bg-ivory p-4">
+            <p className="text-[12px] text-[#8AA79E]">Restore from file</p>
+            <input
+              type="file"
+              accept=".json,.json.enc,.enc"
+              className="block w-full text-sm text-muted-green file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-brand file:text-white hover:file:bg-emerald-brand/90"
+              onChange={handleRestoreUploadFile}
+            />
+            {restoreUploadFile && (
+              <p className="mt-2 text-[12px] font-mono text-forest truncate max-w-xs">{restoreUploadFile.name}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="restore-upload-confirm">Type RESTORE to confirm database restore</Label>
+            <Input
+              id="restore-upload-confirm"
+              value={restoreUploadConfirm}
+              onChange={(event) => setRestoreUploadConfirm(event.target.value)}
+              className="rounded-xl border-[#DCEBE5] bg-ivory"
+            />
+          </div>
+
+          <Button
+            className="rounded-full bg-red-600 text-white hover:bg-red-700"
+            onClick={uploadAndRestore}
+            disabled={busy === 'downloadable-restore' || !restoreUploadFile || restoreUploadConfirm !== 'RESTORE'}
+          >
+            {busy === 'downloadable-restore' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Database className="h-4 w-4" />}
+            Restore from file
+          </Button>
         </div>
       </div>
 
