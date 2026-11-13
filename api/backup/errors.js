@@ -34,6 +34,11 @@ function toPublicError(err) {
       body: { error: err.message, code: err.code, ...(err.details ? { details: err.details } : {}) }
     };
   }
+  console.error(
+    '[backup] unexpected error:',
+    safeErrorMessage(err),
+    err && err.code ? `(code: ${err.code})` : ''
+  );
   return { status: 500, body: { error: 'Server error', code: 'INTERNAL_ERROR' } };
 }
 

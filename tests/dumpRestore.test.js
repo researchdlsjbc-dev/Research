@@ -5,7 +5,8 @@ const {
   quoteIdent,
   tableIdent,
   dumpDatabaseToJson,
-  insertRows
+  insertRows,
+  resetSequences
 } = require('../api/backup/dumpRestore');
 
 test('tableIdent quotes the schema and table separately', () => {
@@ -61,8 +62,33 @@ test('insertRows uses qualified table and column identifiers', async () => {
 
   assert.equal(calls.length, 1);
   assert.ok(
-    calls[0].sql.startsWith('INSERT INTO "public"."authors" ("id", "name") VALUES'),
+    calls[0].sql.startsWith(
+      'INSERT INTO "public"."authors" ("id", "name") OVERRIDING SYSTEM VALUE VALUES'
+    ),
     calls[0].sql
   );
   assert.deepEqual(calls[0].values, [1, 'Ada', 2, 'Grace']);
+});
+
+test('resetSequences resolves sequences by qualified table name', async () => {
+  const calls = [];
+  const fakeClient = {
+    async query(sql, params) {
+      calls.push({ sql, params });
+      if (sql.includes('pg_get_serial_sequence')) {
+        return { rows: [{ column_name: 'id', seq_name: 'public.users_id_seq' }] };
+      }
+      return { rows: [] };
+    }
+  };
+
+  await resetSequences(fakeClient, ['users']);
+
+  assert.equal(calls.length, 2);
+  assert.ok(
+    calls[0].sql.includes("pg_get_serial_sequence(format('%I.%I', n.nspname, c.relname), a.attname)"),
+    calls[0].sql
+  );
+  assert.ok(calls[1].sql.startsWith('SELECT setval($1::regclass'));
+  assert.deepEqual(calls[1].params, ['public.users_id_seq']);
 });

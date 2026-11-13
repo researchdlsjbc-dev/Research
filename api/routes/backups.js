@@ -1117,6 +1117,22 @@ router.post('/restore-upload', async (req, res) => {
     if (client) {
       try { await client.query('ROLLBACK'); } catch (_) {}
     }
+    if (!(err instanceof BackupError)) {
+      console.error(
+        '[backups] restore-upload failed:',
+        safeErrorMessage(err),
+        err && err.code ? `(code: ${err.code})` : ''
+      );
+      const publicError = toPublicError(
+        new BackupError('Restore failed while writing to the database. The transaction was rolled back.', {
+          status: 500,
+          code: 'RESTORE_FAILED'
+        })
+      );
+      if (!res.headersSent) res.status(publicError.status).json(publicError.body);
+      else res.destroy();
+      return;
+    }
     const publicError = toPublicError(err);
     if (!res.headersSent) res.status(publicError.status).json(publicError.body);
     else res.destroy();

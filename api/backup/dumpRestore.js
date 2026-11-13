@@ -149,7 +149,7 @@ async function insertRows(client, table, columns, rows) {
       valueStrings.push(`(${parts.join(', ')})`);
     }
     await client.query(
-      `INSERT INTO ${tableIdent('public', table)} (${colList}) VALUES ${valueStrings.join(', ')}`,
+      `INSERT INTO ${tableIdent('public', table)} (${colList}) OVERRIDING SYSTEM VALUE VALUES ${valueStrings.join(', ')}`,
       values
     );
   }
@@ -158,13 +158,14 @@ async function insertRows(client, table, columns, rows) {
 async function resetSequences(client, tableNames) {
   for (const table of tableNames) {
     const { rows } = await client.query(
-      `SELECT a.attname AS column_name, pg_get_serial_sequence(c.oid, a.attname) AS seq_name
+      `SELECT a.attname AS column_name,
+              pg_get_serial_sequence(format('%I.%I', n.nspname, c.relname), a.attname) AS seq_name
        FROM pg_attribute a
        JOIN pg_class c ON c.oid = a.attrelid
        JOIN pg_namespace n ON n.oid = c.relnamespace
        WHERE n.nspname = 'public' AND c.relname = $1
          AND a.attnum > 0 AND NOT a.attisdropped
-         AND pg_get_serial_sequence(c.oid, a.attname) IS NOT NULL`,
+         AND pg_get_serial_sequence(format('%I.%I', n.nspname, c.relname), a.attname) IS NOT NULL`,
       [table]
     );
     for (const row of rows) {
