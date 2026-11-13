@@ -35,9 +35,6 @@ export default function Login() {
         <div className="absolute inset-0 dot-grid opacity-50" aria-hidden="true" />
         <div className="relative grid md:grid-cols-2 gap-8 max-w-5xl w-full items-center">
         <div className="hidden md:block">
-          <div className="inline-flex h-14 w-14 rounded-2xl quirk-a bg-white items-center justify-center mb-5 tilt-l-sm">
-            <img src="/logo.png" alt="De La Salle John Bosco College logo" className="h-12 w-12 object-contain" />
-          </div>
           <p className="eyebrow mb-3">Sign in</p>
           <h1 className="headline-xl text-5xl mb-4">
             Welcome to the <span className="gradient-text italic">archive.</span>
@@ -60,7 +57,6 @@ export default function Login() {
         <Card className="w-full max-w-md mx-auto quirk-c card-lift">
           <CardHeader className="space-y-1">
             <div className="flex items-center gap-2 md:hidden mb-2">
-              <div className="h-9 w-9 rounded-xl quirk-a bg-white flex items-center justify-center"><img src="/logo.png" alt="De La Salle John Bosco College logo" className="h-8 w-8 object-contain" /></div>
               <span className="font-display font-semibold text-lg gradient-text">ResearchHub</span>
             </div>
             <p className="eyebrow">Member access</p>
