@@ -1,5 +1,4 @@
 import React from 'react';
-import { GraduationCap } from 'lucide-react';
 
 function BookHalf({ side, title, authors, type }) {
   return (
@@ -7,7 +6,11 @@ function BookHalf({ side, title, authors, type }) {
       <div className={`book-leaf book-page book-leaf-${side}`} />
       <div className={`book-leaf book-cover book-leaf-${side}`}>
         <div className="book-cover-text">
-          <GraduationCap className="h-8 w-8" strokeWidth={1.6} />
+          <img
+            src="/logo.png"
+            alt="De La Salle John Bosco College logo"
+            className="h-14 w-14 rounded-full bg-white object-contain p-1"
+          />
           <span className="book-cover-brand">ResearchHub</span>
           {title && <span className="book-cover-title" style={{ fontSize: 'clamp(14px, 3vw, 22px)' }}>{title}</span>}
           {authors && <span className="book-cover-authors" style={{ fontSize: 'clamp(10px, 2vw, 13px)' }}>{authors}</span>}

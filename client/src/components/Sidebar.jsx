@@ -2,7 +2,7 @@ import React from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Button } from './ui/button';
-import { LayoutDashboard, Upload, Users, FolderTree, BookMarked, LogOut, GraduationCap, X, Search, User, HardDrive } from 'lucide-react';
+import { LayoutDashboard, Upload, Users, FolderTree, BookMarked, LogOut, X, Search, User, HardDrive } from 'lucide-react';
 
 const navItems = [
   { to: '/dashboard', label: 'Dashboard', icon: LayoutDashboard },
@@ -37,9 +37,11 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
     <div className="flex h-full w-64 flex-col border-r border-[#E6EDE9] bg-ivory">
       <div className="flex items-center justify-between border-b border-[#E6EDE9] px-5 py-[18px]">
         <div className="flex items-center gap-2.5">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-brand">
-            <GraduationCap className="h-5 w-5 text-white" />
-          </div>
+          <img
+            src="/logo.png"
+            alt="De La Salle John Bosco College logo"
+            className="h-10 w-10 shrink-0 object-contain"
+          />
           <div>
             <h2 className="font-display text-[17px] font-semibold leading-tight text-forest">ResearchHub</h2>
             <p className="mt-0.5 text-[10px] font-bold uppercase tracking-[0.16em] text-[#176653]">Admin Panel</p>

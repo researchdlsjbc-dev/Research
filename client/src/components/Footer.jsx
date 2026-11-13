@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, NavLink } from 'react-router-dom';
-import { GraduationCap, Facebook, Twitter, Youtube } from 'lucide-react';
+import { Facebook, Twitter, Youtube } from 'lucide-react';
 
 const links = [
   { to: '/', label: 'Home', end: true },
@@ -30,8 +30,12 @@ export default function Footer() {
       <div className="container-page relative z-10">
         <div className="flex flex-col items-center justify-between gap-7 border-b border-white/10 pb-8 lg:flex-row">
           <div className="flex items-center gap-3">
-            <span className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10">
-              <GraduationCap className="h-[18px] w-[18px] text-white" />
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-white">
+              <img
+                src="/logo.png"
+                alt="De La Salle John Bosco College logo"
+                className="h-10 w-10 object-contain"
+              />
             </span>
             <div>
               <div className="footer-brand-name">ResearchHub</div>

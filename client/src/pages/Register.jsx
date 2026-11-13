@@ -5,7 +5,6 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
 import Navbar from '../components/Navbar';
-import { GraduationCap } from 'lucide-react';
 
 export default function Register() {
   const { register } = useAuth();
@@ -35,7 +34,7 @@ export default function Register() {
         <Card className="w-full max-w-md mx-auto quirk-c card-lift relative">
         <CardHeader className="space-y-1">
           <div className="flex items-center gap-2 mb-2">
-            <div className="h-9 w-9 rounded-xl gradient-btn flex items-center justify-center tilt-r-sm"><GraduationCap className="h-5 w-5 text-[#FFFFFF]" /></div>
+            <div className="h-9 w-9 rounded-xl quirk-a bg-white flex items-center justify-center tilt-r-sm"><img src="/logo.png" alt="De La Salle John Bosco College logo" className="h-8 w-8 object-contain" /></div>
             <span className="font-display font-semibold text-lg gradient-text">ResearchHub</span>
           </div>
           <p className="eyebrow">New member</p>

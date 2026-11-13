@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { GraduationCap, Menu, X, Search, LogOut, ChevronRight } from 'lucide-react';
+import { Menu, X, Search, LogOut, ChevronRight } from 'lucide-react';
 
 const publicItems = [
   { to: '/', label: 'Home', end: true },
@@ -71,9 +71,11 @@ export default function Navbar() {
       <div className="container-page grid h-[60px] grid-cols-[1fr_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr] lg:gap-8">
         {/* Brand */}
         <NavLink to="/" onClick={close} className="flex shrink-0 items-center gap-3 justify-self-start">
-          <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#08735A]">
-            <GraduationCap className="h-[19px] w-[19px] text-white" />
-          </span>
+          <img
+            src="/logo.png"
+            alt="De La Salle John Bosco College logo"
+            className="h-10 w-10 shrink-0 object-contain"
+          />
           <span className="font-display text-[30px] font-bold leading-none tracking-[-0.02em] text-[#123F38]">
             ResearchHub
           </span>

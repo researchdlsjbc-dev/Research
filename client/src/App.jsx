@@ -23,7 +23,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
 import ErrorBoundary from './components/ErrorBoundary';
-import { GraduationCap, Menu } from 'lucide-react';
+import { Menu } from 'lucide-react';
 
 function FullPageLoader() {
   return (
@@ -66,9 +66,11 @@ function AdminLayout({ children }) {
             <Menu className="h-5 w-5" />
           </button>
           <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-emerald-brand">
-              <GraduationCap className="h-4 w-4 text-white" />
-            </div>
+            <img
+              src="/logo.png"
+              alt="De La Salle John Bosco College logo"
+              className="h-8 w-8 shrink-0 object-contain"
+            />
             <span className="font-display text-[17px] font-semibold leading-none text-forest">ResearchHub</span>
           </div>
           <span className="ml-auto rounded-full bg-soft-green px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#176653]">Admin</span>
