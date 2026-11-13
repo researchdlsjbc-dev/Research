@@ -335,7 +335,7 @@ export default function AdminBackups() {
       const disposition = response.headers['content-disposition'] || '';
       const match = disposition.match(/filename="([^"]+)"/);
       link.href = url;
-      link.download = match ? match[1] : 'researchhub-backup.json.enc';
+      link.download = match ? match[1] : 'researchhub-backup.zip';
       document.body.appendChild(link);
       link.click();
       link.remove();
@@ -848,20 +848,23 @@ export default function AdminBackups() {
         <div className="admin-panel-head">
           <h2 className="admin-panel-title"><Download className="h-4 w-4 text-emerald-brand" /> Downloadable backup file</h2>
           <p className="mt-1 text-[12.5px] text-muted-green">
-            Download a single file containing the whole database. Upload it back here to restore.
+            Download a single ZIP file containing the whole database. Upload it back here to restore. The older
+            single-file (.json/.enc) format is also accepted.
           </p>
         </div>
         <div className="admin-panel-body space-y-4">
           <div className="rounded-xl border border-[#E6EDE9] bg-ivory p-4">
             <p className="text-[12.5px] text-muted-green">
-              The file includes all application data (users, programs, research, authors). Restoring replaces the current
-              database with the backup contents.
+              The archive contains manifest.json plus the full database payload (users, programs, research, authors,
+              backup records). Restoring replaces the current database with the backup contents.
             </p>
             {configured.encryption ? (
-              <p className="mt-1 text-[12.5px] text-[#0C765E]">The file is encrypted with the server backup key.</p>
+              <p className="mt-1 text-[12.5px] text-[#0C765E]">
+                The database payload inside the archive is encrypted with the server backup key.
+              </p>
             ) : (
               <p className="mt-1 text-[12.5px] text-amber-900">
-                No backup encryption key is set; the file is stored plaintext.
+                No backup encryption key is set; the database payload is stored plaintext.
               </p>
             )}
           </div>
@@ -873,7 +876,7 @@ export default function AdminBackups() {
               disabled={busy === 'downloadable-download'}
             >
               {busy === 'downloadable-download' ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-              Download backup file
+              Download backup (ZIP)
             </Button>
           </div>
 
@@ -881,7 +884,7 @@ export default function AdminBackups() {
             <p className="text-[12px] text-[#8AA79E]">Restore from file</p>
             <input
               type="file"
-              accept=".json,.json.enc,.enc"
+              accept=".zip,.json,.json.enc,.enc"
               className="block w-full text-sm text-muted-green file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-emerald-brand file:text-white hover:file:bg-emerald-brand/90"
               onChange={handleRestoreUploadFile}
             />

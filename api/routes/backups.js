@@ -45,6 +45,11 @@ const {
   cleanup,
   tableIdent
 } = require('../backup/dumpRestore');
+const {
+  isZipBuffer,
+  createDownloadableArchive,
+  readDownloadableArchive
+} = require('../backup/backupArchive');
 
 const router = express.Router();
 
@@ -976,11 +981,32 @@ router.post('/downloadable', async (req, res) => {
 
     const rowCount = payload.tables.reduce((sum, table) => sum + table.rows.length, 0);
     const json = Buffer.from(JSON.stringify(payload), 'utf8');
+    const singleFile = String(req.query.format || '').toLowerCase() === 'single';
 
     temp = await tempDir();
     const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
     const fileName = `researchhub-backup-${timestamp}`;
-    const { buffer, fileName: outName, encrypted } = await encryptBuffer(json, temp, fileName);
+    const encryptedFile = await encryptBuffer(json, temp, fileName);
+
+    let buffer;
+    let outName;
+    let contentType;
+    if (singleFile) {
+      buffer = encryptedFile.buffer;
+      outName = encryptedFile.fileName;
+      contentType = 'application/octet-stream';
+    } else {
+      const archive = createDownloadableArchive({
+        payloadBuffer: encryptedFile.buffer,
+        fileName,
+        encrypted: encryptedFile.encrypted,
+        tables: payload.tables.map((table) => table.name),
+        rows: rowCount
+      });
+      buffer = archive.buffer;
+      outName = archive.fileName;
+      contentType = 'application/zip';
+    }
 
     await store.logAudit({
       adminId: req.user.id,
@@ -991,13 +1017,14 @@ router.post('/downloadable', async (req, res) => {
       details: {
         tables: payload.tables.length,
         rows: rowCount,
-        encrypted,
+        encrypted: encryptedFile.encrypted,
+        format: singleFile ? 'single' : 'zip',
         file_name: outName
       }
     });
 
     res.set('Cache-Control', 'no-store, max-age=0');
-    res.set('Content-Type', 'application/octet-stream');
+    res.set('Content-Type', contentType);
     res.set('Content-Disposition', `attachment; filename="${safeFileName(outName)}"`);
     res.set('Content-Length', String(buffer.length));
     res.send(buffer);
@@ -1032,10 +1059,22 @@ router.post('/restore-upload', async (req, res) => {
 
     const base64 = String(raw).replace(/^data:.*;base64,/, '');
     const buffer = Buffer.from(base64, 'base64');
+    const archive = isZipBuffer(buffer) ? readDownloadableArchive(buffer) : null;
+    const payloadBuffer = archive ? archive.payloadBuffer : buffer;
+    const sourceFormat = archive ? 'zip' : 'single';
 
     temp = await tempDir();
-    const plaintext = await decryptBuffer(buffer, temp, 'restore-upload');
-    const payload = validateDownloadablePayload(JSON.parse(plaintext.toString('utf8')));
+    const plaintext = await decryptBuffer(payloadBuffer, temp, 'restore-upload');
+    let parsed;
+    try {
+      parsed = JSON.parse(plaintext.toString('utf8'));
+    } catch (_) {
+      throw new BackupError('The backup file does not contain valid JSON.', {
+        status: 400,
+        code: 'BACKUP_INVALID_JSON'
+      });
+    }
+    const payload = validateDownloadablePayload(parsed);
 
     client = await pool.connect();
     await client.query('BEGIN');
@@ -1066,7 +1105,7 @@ router.post('/restore-upload', async (req, res) => {
       targetType: 'backup',
       targetId: null,
       req,
-      details: { tables: payload.tables.length }
+      details: { tables: payload.tables.length, format: sourceFormat }
     });
 
     res.json({

@@ -6,10 +6,9 @@ const pool = require('../db');
 const { encryptFile, decryptFile, FILE_MAGIC } = require('./crypto');
 const { getConfig } = require('./config');
 const { BackupError } = require('./errors');
+const { APP_NAME, MANIFEST_VERSION } = require('./constants');
 const { logAudit } = require('./store');
 
-const APP_NAME = 'ResearchHub';
-const MANIFEST_VERSION = 1;
 const INSERT_CHUNK = 100;
 
 function quoteIdent(value) {
@@ -17,7 +16,7 @@ function quoteIdent(value) {
 }
 
 function tableIdent(schema, table) {
-  return quoteIdent(`${schema}.${table}`);
+  return `${quoteIdent(schema)}.${quoteIdent(table)}`;
 }
 
 function tempDir() {
