@@ -1055,7 +1055,7 @@
      Pagination
      ================================================================ */
   .pagination {
-    @apply flex flex-wrap items-center gap-1.5 mt-6;
+    @apply flex flex-wrap items-center justify-center gap-1.5 mt-6;
   }
   .page-btn {
     @apply min-w-[30px] h-[30px] px-2 rounded-[7px] text-[13.5px] font-semibold flex items-center justify-center transition;
@@ -1075,6 +1075,28 @@
   .page-btn:disabled {
     opacity: 0.45;
     cursor: default;
+  }
+  .page-btn-gap,
+  .page-btn-gap:hover {
+    background: transparent;
+    border-color: transparent;
+    color: #8AA79E;
+    cursor: default;
+  }
+  .page-btn:focus-visible {
+    outline: 2px solid #0C765E;
+    outline-offset: 2px;
+  }
+
+  /* Results footer: count on the left, centered page numbers */
+  .table-footer {
+    @apply mt-5 flex flex-col border-t border-[#EFF4F1] pt-4;
+  }
+  .table-footer .results-count {
+    @apply mt-0;
+  }
+  .table-footer .pagination {
+    @apply mt-3;
   }
 
   /* ================================================================
@@ -2068,6 +2090,11 @@
       font-size: 16px;
       font-weight: 700;
       padding-left: 8px;
+    }
+
+    .col-actions-header,
+    .col-actions {
+      display: table-cell;
     }
 
     .col-actions {

@@ -5,11 +5,12 @@ import { API } from '../context/AuthContext';
 import { coverGradient, formatDate, pluralize } from '../lib/format';
 import {
   Landmark, Search, SlidersHorizontal, FileText, FolderTree, BookOpen,
-  ArrowRight, ChevronLeft, ChevronRight, Users, X, Edit, Trash2, CheckCircle2, XCircle,
+  ArrowRight, Users, X, Edit, Trash2, CheckCircle2, XCircle,
   Clock, RotateCcw, AlertCircle,
 } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
+import Pagination from '../components/Pagination';
 
 const PAGE_SIZE = 15;
 
@@ -26,64 +27,6 @@ const statusConfig = {
   rejected: { label: 'Rejected', class: 'bg-red-100 text-red-700 border-red-200' },
   draft: { label: 'Draft', class: 'bg-slate-100 text-slate-700 border-slate-200' },
 };
-
-function Pagination({ page, pages, onChange }) {
-  if (pages < 1) return null;
-
-  const visible = [];
-  const push = (n) => { if (!visible.includes(n)) visible.push(n); };
-
-  push(1);
-  for (let p = page - 1; p <= page + 1; p += 1) if (p > 1 && p < pages) push(p);
-  if (pages > 1) push(pages);
-  visible.sort((a, b) => a - b);
-
-  const items = [];
-  visible.forEach((p, i) => {
-    if (i > 0 && p - visible[i - 1] > 1) items.push('gap');
-    items.push(p);
-  });
-
-  return (
-    <nav className="pagination" aria-label="Pagination">
-      <button
-        type="button"
-        className="page-btn"
-        aria-label="Previous page"
-        disabled={page <= 1}
-        onClick={() => onChange(page - 1)}
-      >
-        <ChevronLeft className="h-3.5 w-3.5" />
-      </button>
-
-      {items.map((item, i) =>
-        item === 'gap' ? (
-          <span key={`gap-${i}`} className="page-btn" aria-hidden="true">…</span>
-        ) : (
-          <button
-            key={item}
-            type="button"
-            className={`page-btn${item === page ? ' is-active' : ''}`}
-            aria-current={item === page ? 'page' : undefined}
-            onClick={() => onChange(item)}
-          >
-            {item}
-          </button>
-        )
-      )}
-
-      <button
-        type="button"
-        className="page-btn"
-        aria-label="Next page"
-        disabled={page >= pages}
-        onClick={() => onChange(page + 1)}
-      >
-        <ChevronRight className="h-3.5 w-3.5" />
-      </button>
-    </nav>
-  );
-}
 
 function AdminBrowseResearchContent() {
   const [params, setParams] = useSearchParams();
@@ -404,7 +347,7 @@ function AdminBrowseResearchContent() {
       </Card>
 
       {/* Results Table */}
-      <Card>
+      <Card className="p-5 md:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4 mb-4">
           <div className="flex items-center gap-3">
             <span className="icon-disc">
@@ -549,12 +492,13 @@ function AdminBrowseResearchContent() {
         </div>
 
         {!loading && sorted.length > 0 && (
-          <>
+          <div className="table-footer">
             <p className="results-count">
-              {pluralize(total, 'research result')} · page {page} of {pages}
+              {pluralize(total, 'research result')}
+              {pages > 1 && <> · page {page} of {pages}</>}
             </p>
             <Pagination page={page} pages={pages} onChange={goToPage} />
-          </>
+          </div>
         )}
       </Card>
     </div>

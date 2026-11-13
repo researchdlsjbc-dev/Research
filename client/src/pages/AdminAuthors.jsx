@@ -1,32 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../context/AuthContext';
-import { Users, Search, Plus, ChevronLeft, ChevronRight, MoreHorizontal, Mail, Building2, Award, BookOpen } from 'lucide-react';
+import { Users, Search, Plus, MoreHorizontal, Mail, BookOpen } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Input } from '../components/ui/input';
-import { Badge } from '../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { Card, CardContent } from '../components/ui/card';
+import { Card } from '../components/ui/card';
+import Pagination from '../components/Pagination';
 
 const SORTS = [
   { value: 'name', label: 'Name A-Z' },
   { value: 'publications', label: 'Most Publications' },
   { value: 'recent', label: 'Recently Added' },
 ];
-
-function Pagination({ page, pages, onChange }) {
-  if (pages < 1) return null;
-  return (
-    <nav className="pagination flex items-center justify-center gap-1" aria-label="Pagination">
-      <button className="page-btn" aria-label="Previous page" disabled={page <= 1} onClick={() => onChange(page - 1)}><ChevronLeft className="h-4 w-4" /></button>
-      {Array.from({ length: pages }, (_, i) => i + 1).map(p => (
-        <button key={p} className={`page-btn${p === page ? ' is-active' : ''}`} onClick={() => onChange(p)}>{p}</button>
-      ))}
-      <button className="page-btn" aria-label="Next page" disabled={page >= pages} onClick={() => onChange(page + 1)}><ChevronRight className="h-4 w-4" /></button>
-    </nav>
-  );
-}
 
 export default function AdminAuthors() {
   const [params, setParams] = useSearchParams();
@@ -81,6 +66,11 @@ export default function AdminAuthors() {
     });
   };
 
+  const goToPage = useCallback((p) => {
+    setPage(p);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
   return (
     <div className="admin-page space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -112,67 +102,72 @@ export default function AdminAuthors() {
           </div>
         </div>
 
-        <div className="table-scroll">
-          {loading ? (
-            <div className="space-y-3 py-4">
-              {[1,2,3,4,5].map(i => (
-                <div key={i} className="flex items-center gap-3">
-                  <div className="h-12 w-[38px] animate-pulse rounded bg-soft-green" />
-                  <div className="h-4 flex-1 animate-pulse rounded bg-soft-green" />
-                  <div className="h-4 w-24 animate-pulse rounded bg-soft-green" />
-                  <div className="h-4 w-20 animate-pulse rounded bg-soft-green" />
-                </div>
-              ))}
-            </div>
-          ) : authors.length === 0 ? (
-            <div className="py-14 text-center">
-              <Users className="mx-auto mb-4 h-12 w-12 text-[#8AA79E]" />
-              <h3 className="section-title text-[22px]">No authors found</h3>
-              <p className="mx-auto mt-1.5 max-w-sm text-[14.5px] text-muted-green">Add your first author or adjust search filters.</p>
-            </div>
-          ) : (
-            <table className="research-table">
-              <thead>
-                <tr>
-                  <th>Author</th>
-                  <th>Contact</th>
-                  <th>Affiliation</th>
-                  <th className="text-center">Total Publications</th>
-                  <th className="text-center">Approved</th>
-                  <th style={{ width: 100 }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {authors.map(a => (
-                  <tr key={a.id}>
-                    <td>
-                      <Link to={`/admin/authors/${a.id}`} className="font-medium text-forest hover:underline">{a.name}</Link>
-                    </td>
-                    <td>
-                      {a.email && <a href={`mailto:${a.email}`} className="flex items-center gap-1 text-[13px] text-muted-green hover:text-forest"><Mail className="h-3.5 w-3.5" /> {a.email}</a>}
-                    </td>
-                    <td>{a.affiliation || <span className="text-[#A3B5AF]">—</span>}</td>
-                    <td className="text-center font-mono text-[14px] text-[#0C765E]">{a.publication_count}</td>
-                    <td className="text-center font-mono text-[14px] text-emerald-600">{a.approved_count}</td>
-                    <td>
-                      <div className="flex items-center justify-end gap-1.5">
-                        <Link to={`/admin/authors/${a.id}`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="View Details"><BookOpen className="h-4 w-4" /></Link>
-                        <Link to={`/admin/authors/${a.id}/edit`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="Edit"><MoreHorizontal className="h-4 w-4" /></Link>
-                      </div>
-                    </td>
-                  </tr>
+        <div className="px-4 pb-4 md:px-5 md:pb-5">
+          <div className="table-scroll">
+            {loading ? (
+              <div className="space-y-3 py-4">
+                {[1,2,3,4,5].map(i => (
+                  <div key={i} className="flex items-center gap-3">
+                    <div className="h-12 w-[38px] animate-pulse rounded bg-soft-green" />
+                    <div className="h-4 flex-1 animate-pulse rounded bg-soft-green" />
+                    <div className="h-4 w-24 animate-pulse rounded bg-soft-green" />
+                    <div className="h-4 w-20 animate-pulse rounded bg-soft-green" />
+                  </div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+            ) : authors.length === 0 ? (
+              <div className="py-14 text-center">
+                <Users className="mx-auto mb-4 h-12 w-12 text-[#8AA79E]" />
+                <h3 className="section-title text-[22px]">No authors found</h3>
+                <p className="mx-auto mt-1.5 max-w-sm text-[14.5px] text-muted-green">Add your first author or adjust search filters.</p>
+              </div>
+            ) : (
+              <table className="research-table">
+                <thead>
+                  <tr>
+                    <th>Author</th>
+                    <th>Contact</th>
+                    <th>Affiliation</th>
+                    <th className="text-center">Total Publications</th>
+                    <th className="text-center">Approved</th>
+                    <th style={{ width: 100 }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {authors.map(a => (
+                    <tr key={a.id}>
+                      <td>
+                        <Link to={`/admin/authors/${a.id}`} className="font-medium text-forest hover:underline">{a.name}</Link>
+                      </td>
+                      <td>
+                        {a.email && <a href={`mailto:${a.email}`} className="flex items-center gap-1 text-[13px] text-muted-green hover:text-forest"><Mail className="h-3.5 w-3.5" /> {a.email}</a>}
+                      </td>
+                      <td>{a.affiliation || <span className="text-[#A3B5AF]">—</span>}</td>
+                      <td className="text-center font-mono text-[14px] text-[#0C765E]">{a.publication_count}</td>
+                      <td className="text-center font-mono text-[14px] text-emerald-600">{a.approved_count}</td>
+                      <td>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <Link to={`/admin/authors/${a.id}`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="View Details"><BookOpen className="h-4 w-4" /></Link>
+                          <Link to={`/admin/authors/${a.id}/edit`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="Edit"><MoreHorizontal className="h-4 w-4" /></Link>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+
+          {!loading && authors.length > 0 && (
+            <div className="table-footer">
+              <p className="results-count">
+                {total} author{total !== 1 ? 's' : ''}
+                {pages > 1 && <> · page {page} of {pages}</>}
+              </p>
+              <Pagination page={page} pages={pages} onChange={goToPage} />
+            </div>
           )}
         </div>
-
-        {!loading && authors.length > 0 && (
-          <>
-            <p className="results-count mt-4">{total} author{total !== 1 ? 's' : ''} · page {page} of {pages}</p>
-            <Pagination page={page} pages={pages} onChange={setPage} />
-          </>
-        )}
       </Card>
     </div>
   );
