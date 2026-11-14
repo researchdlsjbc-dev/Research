@@ -8,6 +8,7 @@ import {
   ArrowRight, Users, X,
 } from 'lucide-react';
 import Pagination from '../components/Pagination';
+import BookSlider from '../components/BookSlider';
 
 const PAGE_SIZE = 10;
 
@@ -45,7 +46,7 @@ export default function ResearchList() {
   useEffect(() => {
     axios.get(`${API}/programs/`).then(r => { if (Array.isArray(r.data)) setPrograms(r.data); }).catch(() => {});
     axios.get(`${API}/stats/`).then(r => { if (r.data && !Array.isArray(r.data)) setStats(r.data); }).catch(() => {});
-    axios.get(`${API}/research/`, { params: { featured: 1, limit: 4 } })
+    axios.get(`${API}/research/`, { params: { featured: 1, limit: 10 } })
       .then(r => { if (Array.isArray(r.data?.data)) setFeatured(r.data.data); })
       .catch(() => {});
 
@@ -141,12 +142,15 @@ export default function ResearchList() {
 
   const hasFilters = Boolean(q || program || year);
 
+  const sliderItems = featured.length ? featured : research.slice(0, 10);
+
   return (
     <div className="bg-cream">
       {/* ================= CATALOG HERO ================= */}
       <section className="catalog-hero">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
-          <div className="max-w-full">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-10">
+            <div className="max-w-full">
             <div className="eyebrow inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/40 px-[11px] py-[7px] text-black backdrop-blur-sm">
               <Landmark className="h-[13px] w-[13px]" />
               <span>Central Research Repository</span>
@@ -257,6 +261,11 @@ export default function ResearchList() {
                   <div className="stat-label">Programs</div>
                 </div>
               </div>
+            </div>
+            </div>
+
+            <div className="relative flex flex-col items-stretch">
+              <BookSlider items={sliderItems} />
             </div>
           </div>
         </div>

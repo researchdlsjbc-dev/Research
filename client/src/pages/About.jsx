@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../context/AuthContext';
+import BookSlider from '../components/BookSlider';
 import {
-  Landmark, ArrowRight, Search, BarChart3, FolderOpen, ShieldCheck,
+  Landmark, Search, BarChart3, FolderOpen, ShieldCheck,
   Mail, MapPin, GraduationCap, Quote,
 } from 'lucide-react';
 
@@ -64,10 +64,23 @@ function StatCard({ label, values, icon: Icon }) {
 
 export default function About() {
   const [stats, setStats] = useState(null);
+  const [sliderItems, setSliderItems] = useState([]);
 
   useEffect(() => {
     axios.get(`${API}/stats/`)
       .then(r => { if (r.data && !Array.isArray(r.data)) setStats(r.data); })
+      .catch(() => {});
+    axios.get(`${API}/research/`, { params: { featured: 1, limit: 10 } })
+      .then(r => {
+        const rows = Array.isArray(r.data?.data) ? r.data.data : [];
+        if (rows.length) {
+          setSliderItems(rows);
+          return;
+        }
+        axios.get(`${API}/research/`, { params: { limit: 10, status: 'all' } })
+          .then(r2 => { if (Array.isArray(r2.data?.data)) setSliderItems(r2.data.data); })
+          .catch(() => {});
+      })
       .catch(() => {});
   }, []);
 
@@ -76,7 +89,8 @@ export default function About() {
       {/* ================= HERO ================= */}
       <section className="about-hero">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
-          <div className="max-w-[400px]">
+          <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-10">
+            <div className="max-w-[400px]">
             <div className="eyebrow inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/40 px-[11px] py-[7px] text-black backdrop-blur-sm">
               <Landmark className="h-[13px] w-[13px]" />
               <span>Central Research Repository</span>
@@ -94,12 +108,10 @@ export default function About() {
               We provide students and faculty with easy access to a vast repository of research works,
               publications, and institutional data, supporting innovation and academic excellence.
             </p>
+            </div>
 
-            <div className="mt-6">
-              <Link to="/research" className="hero-cta">
-                <span>View Details</span>
-                <ArrowRight className="hero-arrow h-[14px] w-[14px]" />
-              </Link>
+            <div className="relative flex flex-col items-stretch">
+              <BookSlider items={sliderItems} />
             </div>
           </div>
         </div>
