@@ -1,7 +1,7 @@
 const { BackupError } = require('./errors');
 const { normalizeBackupDatabaseUrl } = require('./databaseUrl');
 
-const PRODUCTION_APP_URL = 'https://research-pi-ten.vercel.app';
+const PRODUCTION_APP_URL = 'https://research-nu-woad.vercel.app';
 const REDIRECT_PATH = '/api/auth/google/callback';
 const DEFAULT_FOLDER_NAME = 'ResearchHub Backups';
 const DEFAULT_SCOPE = 'https://www.googleapis.com/auth/drive.file';

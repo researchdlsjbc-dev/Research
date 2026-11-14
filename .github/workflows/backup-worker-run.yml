@@ -19,8 +19,9 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      APP_URL: https://research-pi-ten.vercel.app
-      GOOGLE_REDIRECT_URI: https://research-pi-ten.vercel.app/api/auth/google/callback
+      APP_URL: https://research-nu-woad.vercel.app
+      GOOGLE_REDIRECT_URI: https://research-nu-woad.vercel.app/api/auth/google/callback
+      RESTORE_ALLOW_NON_STAGING: '1'
       DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
       BACKUP_DATABASE_URL: ${{ secrets.BACKUP_DATABASE_URL }}
       RESTORE_STAGING_DATABASE_URL: ${{ secrets.RESTORE_STAGING_DATABASE_URL }}
