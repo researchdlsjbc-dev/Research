@@ -144,7 +144,7 @@ export default function ResearchList() {
   return (
     <div className="bg-cream">
       {/* ================= CATALOG HERO ================= */}
-      <section className="catalog-hero">
+      <section className="catalog-hero -mt-[60px] pt-[60px]">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
           <div className="max-w-full">
             <div className="eyebrow inline-flex items-center gap-2 text-[#176653]">

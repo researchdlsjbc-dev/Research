@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { Menu, X, Search, LogOut, ChevronRight } from 'lucide-react';
 
@@ -32,7 +32,17 @@ export default function Navbar() {
   const { token, user, isAdmin, logout } = useAuth();
   const [open, setOpen] = useState(false);
   const [term, setTerm] = useState('');
+  const [scrolled, setScrolled] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
+  const overHero = location.pathname === '/research' || location.pathname === '/about';
+
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 8);
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [location.pathname]);
 
   const close = () => setOpen(false);
 
@@ -66,8 +76,10 @@ export default function Navbar() {
     </form>
   );
 
+  const solidHeader = scrolled || open || !overHero;
+
   return (
-    <header className="sticky top-0 z-50 border-b border-[#E6EDE9] bg-ivory/95 backdrop-blur">
+    <header className={`sticky top-0 z-50 border-b ${solidHeader ? 'border-[#E6EDE9] bg-ivory/95 backdrop-blur' : 'border-transparent bg-transparent'}`}>
       <div className="container-page grid h-[60px] grid-cols-[1fr_auto] items-center gap-4 md:grid-cols-[1fr_auto_1fr] lg:gap-8">
         {/* Brand */}
         <NavLink to="/" onClick={close} className="flex shrink-0 items-center gap-3 justify-self-start">
@@ -82,7 +94,7 @@ export default function Navbar() {
         </NavLink>
 
         {/* Nav */}
-        <nav className="hidden items-center gap-8 justify-self-center md:flex">
+        <nav className={`hidden items-center gap-8 justify-self-center md:flex${solidHeader ? '' : ' nav-on-hero'}`}>
           {publicItems.map(item => (
             <NavLink key={item.to} to={item.to} end={item.end} className={navLinkClass}>
               {item.label}

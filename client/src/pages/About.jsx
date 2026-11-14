@@ -74,7 +74,7 @@ export default function About() {
   return (
     <div className="bg-cream">
       {/* ================= HERO ================= */}
-      <section className="about-hero">
+      <section className="about-hero -mt-[60px] pt-[60px]">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
           <div className="max-w-[640px]">
             <div className="eyebrow inline-flex items-center gap-2 text-[#176653]">
