@@ -406,7 +406,7 @@ export default function ResearchList() {
             </section>
 
             {/* ---------- SIDEBAR ---------- */}
-            <aside className="flex flex-col gap-5">
+            <aside className="mt-5 flex flex-col gap-5">
               <section className="sidebar-card">
                 <h2 className="section-title text-[23px]">Featured Collections</h2>
                 <p className="section-sub">Curated research works, hand-picked by the archive.</p>
