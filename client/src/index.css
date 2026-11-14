@@ -733,7 +733,8 @@
   /* ================================================================
      Browse page
      ================================================================ */
-  .catalog-hero {
+  .catalog-hero,
+  .dashboard-hero {
     position: relative;
     background-image: url("/img/Background.png");
     background-size: cover;
