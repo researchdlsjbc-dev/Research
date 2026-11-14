@@ -144,17 +144,17 @@ export default function ResearchList() {
   return (
     <div className="bg-cream">
       {/* ================= CATALOG HERO ================= */}
-      <section className="catalog-hero -mt-[60px] pt-[60px]">
+      <section className="catalog-hero">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
           <div className="max-w-full">
-            <div className="eyebrow inline-flex items-center gap-2 text-[#176653]">
+            <div className="eyebrow inline-flex items-center gap-2 text-black">
               <Landmark className="h-[13px] w-[13px]" />
               <span>Central Research Repository</span>
             </div>
 
-            <h1 className="catalog-title mt-4">Browse Research Catalog</h1>
+            <h1 className="catalog-title mt-4 text-black">Browse Research Catalog</h1>
 
-            <p className="mt-4 max-w-[540px] text-[15px] leading-[1.55] text-[#52736A]">
+            <p className="mt-4 max-w-[540px] text-[15px] leading-[1.55] text-black">
               Discover credible research, academic papers, and scholarly resources from our institution.
             </p>
 

@@ -244,13 +244,6 @@
     background: #075744;
     border-radius: 2px;
   }
-  .nav-on-hero .nav-link {
-    color: #1B4A40;
-  }
-  .nav-on-hero .nav-link:hover {
-    color: #062A22;
-  }
-
   .header-search {
     @apply w-full h-9 pl-5 pr-11 rounded-full text-[13.5px] text-forest border border-transparent transition;
     background: #EEF5F1;

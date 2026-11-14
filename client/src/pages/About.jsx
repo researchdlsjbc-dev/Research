@@ -74,23 +74,23 @@ export default function About() {
   return (
     <div className="bg-cream">
       {/* ================= HERO ================= */}
-      <section className="about-hero -mt-[60px] pt-[60px]">
+      <section className="about-hero">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
           <div className="max-w-[640px]">
-            <div className="eyebrow inline-flex items-center gap-2 text-[#176653]">
+            <div className="eyebrow inline-flex items-center gap-2 text-black">
               <Landmark className="h-[13px] w-[13px]" />
               <span>Central Research Repository</span>
             </div>
 
-            <h1 className="about-page-title mt-5">About ResearchHub.</h1>
+            <h1 className="about-page-title mt-5 text-black">About ResearchHub.</h1>
 
-            <p className="mt-5 text-[13.5px] leading-[1.6] text-[#52736A]">
+            <p className="mt-5 text-[13.5px] leading-[1.6] text-black">
               ResearchHub is a comprehensive digital platform dedicated to centralizing, preserving,
               and showcasing the academic output of the institution. Our mission is to empower discovery,
               foster collaboration, and preserve knowledge for future generations.
             </p>
 
-            <p className="mt-3.5 text-[13.5px] leading-[1.6] text-[#52736A]">
+            <p className="mt-3.5 text-[13.5px] leading-[1.6] text-black">
               We provide students and faculty with easy access to a vast repository of research works,
               publications, and institutional data, supporting innovation and academic excellence.
             </p>
