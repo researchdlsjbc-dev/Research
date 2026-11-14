@@ -76,7 +76,7 @@ export default function About() {
       {/* ================= HERO ================= */}
       <section className="about-hero">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
-          <div className="max-w-[560px]">
+          <div className="max-w-[400px]">
             <div className="eyebrow inline-flex items-center gap-2 text-black">
               <Landmark className="h-[13px] w-[13px]" />
               <span>Central Research Repository</span>

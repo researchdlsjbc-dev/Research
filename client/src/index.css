@@ -1106,7 +1106,7 @@
     position: relative;
     background-image: url("/img/Background.png");
     background-size: cover;
-    background-position: center;
+    background-position: center 30%;
     background-repeat: no-repeat;
   }
   .about-page-title {
