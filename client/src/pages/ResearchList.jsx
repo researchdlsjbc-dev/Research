@@ -267,7 +267,7 @@ export default function ResearchList() {
         <div className="container-page pb-10">
           <div className="catalog-layout">
             {/* ---------- RESULTS ---------- */}
-            <section className="latest-research-card">
+            <section className="latest-research-card mt-5">
               <div className="flex flex-col sm:flex-row items-start sm:items-start justify-between sm:justify-between gap-3 sm:gap-4">
                 <div className="flex items-center gap-3">
                   <span className="icon-disc">
