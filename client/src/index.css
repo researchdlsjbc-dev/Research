@@ -740,6 +740,9 @@
     background-position: center;
     background-repeat: no-repeat;
   }
+  .catalog-hero {
+    background-position: center 30%;
+  }
   .catalog-title {
     font-family: "Cormorant Garamond", "Playfair Display", serif;
     font-size: clamp(28px, 5vw, 42px);
