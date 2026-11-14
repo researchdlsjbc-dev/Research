@@ -147,7 +147,7 @@ export default function ResearchList() {
       <section className="catalog-hero">
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
           <div className="max-w-full">
-            <div className="eyebrow inline-flex items-center gap-2 text-black">
+            <div className="eyebrow inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/40 px-[11px] py-[7px] text-black backdrop-blur-sm">
               <Landmark className="h-[13px] w-[13px]" />
               <span>Central Research Repository</span>
             </div>

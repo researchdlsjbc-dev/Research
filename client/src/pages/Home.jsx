@@ -327,7 +327,7 @@ export default function Home() {
         <div className="container-page relative z-10 pb-24 pt-12 lg:pb-28 lg:pt-14">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[47%_1fr] lg:gap-6">
             <div>
-              <div className="eyebrow inline-flex items-center gap-2 rounded-full bg-[#E7F1EC] px-[11px] py-[7px] text-black">
+              <div className="eyebrow inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/40 px-[11px] py-[7px] text-black backdrop-blur-sm">
                 <BookOpen className="h-3 w-3" />
                 <span>Central Research Repository</span>
               </div>
