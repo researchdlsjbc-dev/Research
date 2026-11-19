@@ -92,7 +92,7 @@ export default function Dashboard() {
                 </TableHeader>
                 <TableBody>
                   {recent.map(r => (
-                    <TableRow key={r.id} className="cursor-pointer border-0" onClick={() => window.location.href = `/research/${r.id}`}>
+                    <TableRow key={r.id} className="cursor-pointer border-0" onClick={() => window.location.href = `/admin/research/${r.id}`}>
                       <TableCell className="font-mono text-[12px] font-semibold text-[#0C765E]">{r.code}</TableCell>
                       <TableCell className="font-medium text-forest">{r.title}</TableCell>
                       <TableCell>
