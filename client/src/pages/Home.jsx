@@ -237,7 +237,7 @@ export default function Home() {
       )}
       {/* ================= HERO ================= */}
       <section className="hero-image relative overflow-hidden">
-        <div className="container-page relative z-10 pb-24 pt-24 lg:pb-28 lg:pt-32">
+        <div className="container-page relative z-10 pb-24 pt-32 lg:pb-28 lg:pt-40">
           <div className="grid grid-cols-1 items-center gap-10 lg:grid-cols-[47%_1fr] lg:gap-6">
             <div>
               <div className="eyebrow inline-flex items-center gap-2 rounded-full border border-white/50 bg-white/40 px-[11px] py-[7px] text-black backdrop-blur-sm">
