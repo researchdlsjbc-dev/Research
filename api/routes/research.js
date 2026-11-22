@@ -1,6 +1,7 @@
 const express = require('express');
+const jwt = require('jsonwebtoken');
 const pool = require('../db');
-const { authenticateToken, requireAdmin } = require('../middleware/auth');
+const { authenticateToken, requireAdmin, JWT_SECRET } = require('../middleware/auth');
 const {
   storageConfig,
   createSignedUploadUrl,
@@ -364,7 +365,21 @@ router.post('/:id/pdf/access-code/regenerate', authenticateToken, requireAdmin, 
 
 router.get('/:id', async (req, res) => {
   try {
-    await pool.query('UPDATE research SET view_count = COALESCE(view_count, 0) + 1 WHERE id = $1', [req.params.id]);
+    // Do not count views coming from admins
+    let isAdminView = false;
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+      const token = authHeader.split(' ')[1];
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, JWT_SECRET);
+          if (decoded.role === 'admin') isAdminView = true;
+        } catch {}
+      }
+    }
+    if (!isAdminView) {
+      await pool.query('UPDATE research SET view_count = COALESCE(view_count, 0) + 1 WHERE id = $1', [req.params.id]);
+    }
     const SELECT = await getSelect();
     const { rows } = await pool.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [req.params.id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });
