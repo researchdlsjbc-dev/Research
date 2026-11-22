@@ -5,7 +5,6 @@ import { API } from '../context/AuthContext';
 import { ArrowLeft, Mail, Building2, Award, BookOpen, Calendar, Users, TrendingUp, Edit, MoreHorizontal, CheckCircle2, Clock, FolderTree, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
 import { Badge } from '../components/ui/badge';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
 
 export default function AdminAuthorDetail() {
@@ -34,12 +33,8 @@ export default function AdminAuthorDetail() {
   if (loading) return <div className="admin-page flex items-center justify-center min-h-[400px]">Loading...</div>;
   if (!author) return <div className="admin-page text-center py-12">Author not found</div>;
 
-  const statusConfig = {
-    approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
-    pending: 'bg-amber-100 text-amber-700 border-amber-200',
-    rejected: 'bg-red-100 text-red-700 border-red-200',
-    draft: 'bg-slate-100 text-slate-700 border-slate-200',
-  };
+  const maxYear = Math.max(1, ...(stats?.by_year || []).map(y => y.count));
+  const maxProgram = Math.max(1, ...(stats?.by_program || []).map(p => p.count));
 
   return (
     <div className="admin-page space-y-6">
@@ -54,18 +49,21 @@ export default function AdminAuthorDetail() {
       </div>
 
       <div className="grid gap-4 lg:grid-cols-4">
-        <div className="admin-panel lg:col-span-1">
+        <div className="admin-panel min-w-0 lg:col-span-1 lg:self-start">
           <div className="admin-panel-body flex flex-col items-center text-center">
-            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-brand text-3xl font-bold text-white">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-brand text-3xl font-bold text-white ring-4 ring-soft-green">
               {author.name.charAt(0).toUpperCase()}
             </div>
             <h3 className="mt-4 text-lg font-semibold text-forest">{author.name}</h3>
             {author.affiliation && <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green"><Building2 className="h-3.5 w-3.5" /> {author.affiliation}</p>}
             {author.email && <a href={`mailto:${author.email}`} className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green hover:text-forest"><Mail className="h-3.5 w-3.5" /> {author.email}</a>}
             {author.orcid && <a href={`https://orcid.org/${author.orcid}`} target="_blank" rel="noopener" className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green hover:text-forest"><Award className="h-3.5 w-3.5" /> ORCID: {author.orcid}</a>}
+            {!author.affiliation && !author.email && !author.orcid && (
+              <p className="mt-2 text-[12.5px] italic text-[#8AA79E]">No contact details on file</p>
+            )}
           </div>
         </div>
-        <div className="lg:col-span-3 space-y-5">
+        <div className="min-w-0 space-y-5 lg:col-span-3">
           <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
             <div className="admin-stat">
               <span className="admin-stat-chip bg-soft-green text-emerald-brand"><BookOpen className="h-4 w-4" /></span>
@@ -86,7 +84,7 @@ export default function AdminAuthorDetail() {
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
-            <TabsList className="flex flex-wrap gap-1.5 rounded-full border border-[#E6EDE9] bg-white p-1.5">
+            <TabsList className="inline-flex w-fit flex-wrap gap-1.5 rounded-full border border-[#E6EDE9] bg-white p-1.5">
               <TabsTrigger value="publications" className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-muted-green transition data-[state=active]:bg-emerald-brand data-[state=active]:text-white">Publications ({research.length})</TabsTrigger>
               <TabsTrigger value="stats" className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-muted-green transition data-[state=active]:bg-emerald-brand data-[state=active]:text-white">Statistics</TabsTrigger>
             </TabsList>
@@ -103,20 +101,28 @@ export default function AdminAuthorDetail() {
                 </div>
               ) : (
                 <div className="table-scroll">
-                <Table className="admin-table min-w-[680px]">
-                  <TableHeader><TableRow className="border-0"><TableHead>Title</TableHead><TableHead>Program</TableHead><TableHead>Year</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                  <TableBody>
+                <table className="admin-table w-full table-fixed min-w-[700px] border-collapse">
+                  <thead>
+                    <tr>
+                      <th style={{ width: 300 }}>Title</th>
+                      <th style={{ width: 170 }}>Program</th>
+                      <th className="text-center" style={{ width: 56 }}>Year</th>
+                      <th style={{ width: 110 }}>Status</th>
+                      <th style={{ width: 64 }} aria-label="Actions" />
+                    </tr>
+                  </thead>
+                  <tbody>
                     {research.map(r => (
-                      <TableRow key={r.id}>
-                        <TableCell><Link to={`/admin/research/${r.id}`} className="font-medium text-forest hover:underline">{r.title}</Link></TableCell>
-                        <TableCell>{r.program_name || <span className="text-[#A3B5AF]">—</span>}</TableCell>
-                        <TableCell className="font-mono text-muted-green">{r.year}</TableCell>
-                        <TableCell><Badge variant={r.status} className="capitalize">{r.status}</Badge></TableCell>
-                        <TableCell className="text-right"><Link to={`/admin/research/${r.id}`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="View"><MoreHorizontal className="h-4 w-4" /></Link></TableCell>
-                      </TableRow>
+                      <tr key={r.id}>
+                        <td><Link to={`/admin/research/${r.id}`} className="block truncate text-[14px] font-semibold leading-[1.4] text-forest hover:underline" title={r.title}>{r.title}</Link></td>
+                        <td><span className="block truncate text-[13px] leading-[1.5] text-[#55736C]" title={r.program_name || undefined}>{r.program_name || <span className="text-[#A3B5AF]">—</span>}</span></td>
+                        <td className="text-center font-mono text-muted-green">{r.year}</td>
+                        <td><Badge variant={r.status} className="whitespace-nowrap capitalize">{r.status}</Badge></td>
+                        <td className="text-right"><Link to={`/admin/research/${r.id}`} className="ml-auto flex h-8 w-8 items-center justify-center rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="View"><MoreHorizontal className="h-4 w-4" /></Link></td>
+                      </tr>
                     ))}
-                  </TableBody>
-                </Table>
+                  </tbody>
+                </table>
                 </div>
               )}
             </TabsContent>
@@ -148,10 +154,18 @@ export default function AdminAuthorDetail() {
                       <div className="admin-panel-head">
                         <h2 className="admin-panel-title"><Calendar className="h-4 w-4 text-emerald-brand" /> Publications by Year</h2>
                       </div>
-                      <div className="table-scroll">
-                        <Table className="admin-table"><TableHeader><TableRow><TableHead>Year</TableHead><TableHead className="text-right">Count</TableHead></TableRow></TableHeader>
-                        <TableBody>{stats.by_year.map(y => (<TableRow key={y.year}><TableCell className="font-mono">{y.year}</TableCell><TableCell className="text-right font-semibold text-[#0C765E]">{y.count}</TableCell></TableRow>))}</TableBody>
-                        </Table>
+                      <div className="admin-panel-body">
+                        <div className="space-y-2">
+                          {stats.by_year.map(y => (
+                            <Link key={y.year} to={`/admin/browse?year=${y.year}`} className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-soft-green">
+                              <span className="flex h-6 w-12 shrink-0 items-center justify-center rounded-full bg-soft-green font-mono text-[11px] font-bold text-[#0C765E]">{y.year}</span>
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
+                                <div className="h-full rounded-full bg-emerald-brand" style={{ width: `${(y.count / maxYear) * 100}%` }} />
+                              </div>
+                              <span className="w-8 shrink-0 text-right font-mono text-[11.5px] font-semibold text-[#0C765E]">{y.count}</span>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
@@ -160,10 +174,18 @@ export default function AdminAuthorDetail() {
                       <div className="admin-panel-head">
                         <h2 className="admin-panel-title"><FolderTree className="h-4 w-4 text-emerald-brand" /> Publications by Program</h2>
                       </div>
-                      <div className="table-scroll">
-                        <Table className="admin-table"><TableHeader><TableRow><TableHead>Program</TableHead><TableHead className="text-right">Count</TableHead></TableRow></TableHeader>
-                        <TableBody>{stats.by_program.map(p => (<TableRow key={p.code}><TableCell>{p.name}</TableCell><TableCell className="text-right font-semibold text-[#0C765E]">{p.count}</TableCell></TableRow>))}</TableBody>
-                        </Table>
+                      <div className="admin-panel-body">
+                        <div className="space-y-2">
+                          {stats.by_program.map(p => (
+                            <Link key={p.code} to={`/admin/browse?program=${encodeURIComponent(p.code)}`} className="flex items-center gap-3 rounded-lg px-2 py-1.5 transition hover:bg-soft-green">
+                              <span className="w-36 shrink-0 truncate text-[12.5px] font-semibold text-[#3F635A]" title={p.name}>{p.name}</span>
+                              <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
+                                <div className="h-full rounded-full bg-emerald-brand" style={{ width: `${(p.count / maxProgram) * 100}%` }} />
+                              </div>
+                              <span className="w-8 shrink-0 text-right font-mono text-[11.5px] font-semibold text-[#0C765E]">{p.count}</span>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
                     </div>
                   )}
