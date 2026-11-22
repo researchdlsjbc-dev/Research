@@ -122,33 +122,35 @@ export default function AdminAuthors() {
                 <p className="mx-auto mt-1.5 max-w-sm text-[14.5px] text-muted-green">Add your first author or adjust search filters.</p>
               </div>
             ) : (
-              <table className="research-table min-w-[680px]">
+              <table className="admin-table w-full table-fixed min-w-[1156px] border-collapse">
                 <thead>
                   <tr>
-                    <th>Author</th>
-                    <th>Contact</th>
-                    <th>Affiliation</th>
-                    <th className="text-center">Total Publications</th>
-                    <th className="text-center">Approved</th>
-                    <th style={{ width: 100 }}>Actions</th>
+                    <th style={{ width: 250 }}>Author</th>
+                    <th style={{ width: 270 }}>Contact</th>
+                    <th style={{ width: 230 }}>Affiliation</th>
+                    <th className="text-center" style={{ width: 176 }}>Total Publications</th>
+                    <th className="text-center" style={{ width: 110 }}>Approved</th>
+                    <th className="text-right" style={{ width: 120 }}>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {authors.map(a => (
                     <tr key={a.id}>
                       <td>
-                        <Link to={`/admin/authors/${a.id}`} className="font-medium text-forest hover:underline">{a.name}</Link>
+                        <Link to={`/admin/authors/${a.id}`} className="block truncate text-[14px] font-semibold leading-[1.4] text-forest hover:underline" title={a.name}>{a.name}</Link>
                       </td>
                       <td>
-                        {a.email && <a href={`mailto:${a.email}`} className="flex items-center gap-1 text-[13px] text-muted-green hover:text-forest"><Mail className="h-3.5 w-3.5" /> {a.email}</a>}
+                        {a.email
+                          ? <a href={`mailto:${a.email}`} className="flex items-center gap-1.5 text-[13px] text-muted-green hover:text-forest" title={a.email}><Mail className="h-3.5 w-3.5 shrink-0" /> <span className="truncate">{a.email}</span></a>
+                          : <span className="text-[#A3B5AF]">—</span>}
                       </td>
-                      <td>{a.affiliation || <span className="text-[#A3B5AF]">—</span>}</td>
+                      <td><span className="block truncate text-[13px] leading-[1.5] text-[#55736C]" title={a.affiliation || undefined}>{a.affiliation || <span className="text-[#A3B5AF]">—</span>}</span></td>
                       <td className="text-center font-mono text-[14px] text-[#0C765E]">{a.publication_count}</td>
                       <td className="text-center font-mono text-[14px] text-emerald-600">{a.approved_count}</td>
                       <td>
-                        <div className="flex items-center justify-end gap-1.5">
-                          <Link to={`/admin/authors/${a.id}`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="View Details"><BookOpen className="h-4 w-4" /></Link>
-                          <Link to={`/admin/authors/${a.id}/edit`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="Edit"><MoreHorizontal className="h-4 w-4" /></Link>
+                        <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                          <Link to={`/admin/authors/${a.id}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="View Details"><BookOpen className="h-4 w-4" /></Link>
+                          <Link to={`/admin/authors/${a.id}/edit`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-green hover:bg-soft-green hover:text-forest" title="Edit"><MoreHorizontal className="h-4 w-4" /></Link>
                         </div>
                       </td>
                     </tr>

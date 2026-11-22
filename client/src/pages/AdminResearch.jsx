@@ -8,7 +8,6 @@ import { Badge } from '../components/ui/badge';
 import {
   Tabs, TabsList, TabsTrigger,
 } from '../components/ui/tabs';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Search, CheckCircle2, XCircle, RotateCcw, Pencil, Trash2, Star, BookMarked, Plus } from 'lucide-react';
 
 export default function AdminResearch() {
@@ -102,49 +101,55 @@ export default function AdminResearch() {
           </div>
 
           <div className="table-scroll">
-          <Table className="admin-table min-w-[960px]">
-            <TableHeader>
-              <TableRow className="border-0 hover:bg-transparent">
-                <TableHead>Code</TableHead><TableHead>Title</TableHead><TableHead>Authors</TableHead><TableHead>Year</TableHead><TableHead className="text-center">Views</TableHead><TableHead>Status</TableHead><TableHead className="text-center">Featured</TableHead><TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <table className="admin-table w-full table-fixed min-w-[1196px] border-collapse">
+            <thead>
+              <tr>
+                <th style={{ width: 124 }}>Code</th>
+                <th style={{ width: 284 }}>Title</th>
+                <th style={{ width: 196 }}>Authors</th>
+                <th className="text-center" style={{ width: 56 }}>Year</th>
+                <th className="text-center" style={{ width: 60 }}>Views</th>
+                <th style={{ width: 108 }}>Status</th>
+                <th className="text-center" style={{ width: 80 }}>Featured</th>
+                <th className="text-right" style={{ width: 280 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
               {research.map(r => (
-                <TableRow key={r.id} className="border-0">
-                  <TableCell className="font-mono text-[12px] font-semibold text-[#0C765E]">{r.code}</TableCell>
-                  <TableCell>
-                    <Link to={`/admin/research/${r.id}`} className="font-medium text-forest transition hover:text-[#0C765E] hover:underline">{r.title}</Link>
-                  </TableCell>
-                  <TableCell className="text-muted-green">{r.authors}</TableCell>
-                  <TableCell className="font-mono text-muted-green">{r.year}</TableCell>
-                  <TableCell className="text-center font-mono text-muted-green">{r.view_count ?? 0}</TableCell>
-                  <TableCell><Badge variant={r.status} className="capitalize">{r.status}</Badge></TableCell>
-                  <TableCell className="text-center">
-                    <Button
-                      size="sm"
-                      variant="ghost"
+                <tr key={r.id}>
+                  <td className="font-mono text-[12px] font-semibold text-[#0C765E]"><span className="block truncate" title={r.code}>{r.code}</span></td>
+                  <td>
+                    <Link to={`/admin/research/${r.id}`} className="block truncate text-[14px] font-semibold leading-[1.4] text-forest transition hover:text-[#0C765E] hover:underline" title={r.title}>{r.title}</Link>
+                  </td>
+                  <td><span className="block truncate text-[13px] leading-[1.5] text-[#55736C]" title={r.authors}>{r.authors}</span></td>
+                  <td className="text-center font-mono text-muted-green">{r.year}</td>
+                  <td className="text-center font-mono text-muted-green">{r.view_count ?? 0}</td>
+                  <td><Badge variant={r.status} className="whitespace-nowrap capitalize">{r.status}</Badge></td>
+                  <td className="text-center">
+                    <button
+                      type="button"
                       onClick={() => toggleFeatured(r)}
                       title={r.is_featured ? 'Remove from featured' : 'Feature on home page'}
                       aria-label={r.is_featured ? `Unfeature ${r.title}` : `Feature ${r.title}`}
-                      className={`h-8 w-8 rounded-full p-0 ${r.is_featured ? 'text-amber-500 hover:bg-amber-50' : 'text-[#B9C9C3] hover:bg-soft-green hover:text-amber-500'}`}
+                      className={`mx-auto flex h-8 w-8 items-center justify-center rounded-full border transition ${r.is_featured ? 'border-amber-200 bg-amber-50 text-amber-500' : 'border-[#DCEBE5] text-[#B9C9C3] hover:bg-soft-green hover:text-amber-500'}`}
                     >
                       <Star className={`h-4 w-4 ${r.is_featured ? 'fill-current' : ''}`} />
-                    </Button>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex flex-wrap justify-end gap-1.5">
-                      {r.status !== 'approved' && <Button size="sm" className="gradient-btn rounded-full" onClick={() => updateStatus(r.id, 'approved')}><CheckCircle2 className="h-3.5 w-3.5" /> Approve</Button>}
-                      {r.status !== 'rejected' && <Button size="sm" variant="outline" aria-label="Reject" className="h-8 w-8 rounded-full p-0 border-red-200 text-red-600 transition hover:bg-red-50 hover:text-red-700" onClick={() => updateStatus(r.id, 'rejected')}><XCircle className="h-3.5 w-3.5" /></Button>}
-                      {r.status !== 'pending' && <Button size="sm" variant="outline" aria-label="Move to pending" className="h-8 w-8 rounded-full p-0 border-[#DCEBE5] text-amber-600 transition hover:bg-amber-50" onClick={() => updateStatus(r.id, 'pending')}><RotateCcw className="h-3.5 w-3.5" /></Button>}
-                      <Link to={`/edit-research/${r.id}`}><Button size="sm" variant="outline" aria-label="Edit" className="h-8 w-8 rounded-full p-0 border-[#DCEBE5] text-muted-green transition hover:bg-soft-green hover:text-forest"><Pencil className="h-3.5 w-3.5" /></Button></Link>
-                      <Button size="sm" variant="ghost" aria-label="Delete" className="h-8 w-8 rounded-full p-0 text-red-500 transition hover:bg-red-50 hover:text-red-700" onClick={() => handleDelete(r.id)}><Trash2 className="h-3.5 w-3.5" /></Button>
+                    </button>
+                  </td>
+                  <td>
+                    <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                      {r.status !== 'approved' && <button type="button" onClick={() => updateStatus(r.id, 'approved')} className="gradient-btn flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-[12.5px] font-semibold"><CheckCircle2 className="h-3.5 w-3.5" /> Approve</button>}
+                      {r.status !== 'rejected' && <button type="button" aria-label="Reject" title="Reject" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-red-200 text-red-600 transition hover:bg-red-50 hover:text-red-700" onClick={() => updateStatus(r.id, 'rejected')}><XCircle className="h-3.5 w-3.5" /></button>}
+                      {r.status !== 'pending' && <button type="button" aria-label="Move to pending" title="Move to pending" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#DCEBE5] text-amber-600 transition hover:bg-amber-50" onClick={() => updateStatus(r.id, 'pending')}><RotateCcw className="h-3.5 w-3.5" /></button>}
+                      <Link to={`/edit-research/${r.id}`} aria-label="Edit" title="Edit" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-[#DCEBE5] text-muted-green transition hover:bg-soft-green hover:text-forest"><Pencil className="h-3.5 w-3.5" /></Link>
+                      <button type="button" aria-label="Delete" title="Delete" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-red-500 transition hover:bg-red-50 hover:text-red-700" onClick={() => handleDelete(r.id)}><Trash2 className="h-3.5 w-3.5" /></button>
                     </div>
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               ))}
-              {research.length === 0 && <TableRow className="border-0"><TableCell colSpan={8} className="py-14 text-center text-[13.5px] text-muted-green">No research found</TableCell></TableRow>}
-            </TableBody>
-          </Table>
+              {research.length === 0 && <tr><td colSpan={8} className="py-14 text-center text-[13.5px] text-muted-green">No research found</td></tr>}
+            </tbody>
+          </table>
           </div>
         </div>
       </Tabs>
