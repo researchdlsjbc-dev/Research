@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../context/AuthContext';
@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import {
-  LayoutDashboard, FileText, Users, FolderTree, Eye, BarChart3, Clock, CheckCircle2, XCircle, ArrowRight, TrendingUp, TrendingDown, Calendar
+  LayoutDashboard, FileText, Users, FolderTree, Eye, BarChart3, Clock, CheckCircle2, XCircle, ArrowRight, TrendingUp, TrendingDown, Calendar, Search, X
 } from 'lucide-react';
 
 const StatCard = ({ label, value, icon: Icon, chip, trend, trendLabel }) => (
@@ -28,12 +28,20 @@ const StatCard = ({ label, value, icon: Icon, chip, trend, trendLabel }) => (
   </div>
 );
 
+const EMPTY_TOTALS = { total: 0, approved: 0, pending: 0, rejected: 0, views: 0 };
+
 export default function AdminReports() {
   const [stats, setStats] = useState(null);
   const [topViews, setTopViews] = useState([]);
   const [byProgram, setByProgram] = useState([]);
   const [byYear, setByYear] = useState([]);
   const [loading, setLoading] = useState(true);
+
+  const [programList, setProgramList] = useState([]);
+  const [programFilter, setProgramFilter] = useState('');
+  const [yearFilter, setYearFilter] = useState('');
+  const [query, setQuery] = useState('');
+  const [draftQuery, setDraftQuery] = useState('');
 
   useEffect(() => {
     axios.get(`${API}/stats/`).then(r => {
@@ -45,7 +53,64 @@ export default function AdminReports() {
       }
       setLoading(false);
     }).catch(() => setLoading(false));
+    axios.get(`${API}/programs/`).then(r => { if (Array.isArray(r.data)) setProgramList(r.data); }).catch(() => {});
   }, []);
+
+  const matrix = useMemo(() => (Array.isArray(stats?.byProgramYear) ? stats.byProgramYear : []), [stats]);
+
+  const yearOptions = useMemo(() => {
+    const set = new Set();
+    (Array.isArray(stats?.years) ? stats.years : []).forEach(y => { if (y != null) set.add(Number(y)); });
+    matrix.forEach(r => { if (r.year != null) set.add(Number(r.year)); });
+    return [...set].sort((a, b) => b - a);
+  }, [stats, matrix]);
+
+  const hasUnassigned = useMemo(() => matrix.some(r => !r.program_code), [matrix]);
+
+  const filteredRows = useMemo(() => matrix.filter(row => {
+    const programOk = !programFilter
+      || (programFilter === '__none' ? !row.program_code : row.program_code === programFilter);
+    const yearOk = !yearFilter || String(row.year) === yearFilter;
+    return programOk && yearOk;
+  }), [matrix, programFilter, yearFilter]);
+
+  const groups = useMemo(() => filteredRows.map(row => ({
+    key: `${row.program_code || '__none'}-${row.year}`,
+    label: row.program_name || 'Unassigned',
+    year: row.year,
+    total: row.total,
+    approved: row.approved,
+    pending: row.pending,
+    rejected: row.rejected,
+    views: row.views,
+  })).sort((a, b) => (b.year - a.year) || a.label.localeCompare(b.label)), [filteredRows]);
+
+  const visibleGroups = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    if (!term) return groups;
+    return groups.filter(g => `${g.label} ${g.year ?? ''}`.toLowerCase().includes(term));
+  }, [groups, query]);
+
+  const filteredTotals = useMemo(
+    () => visibleGroups.reduce((acc, g) => ({
+      total: acc.total + g.total,
+      approved: acc.approved + g.approved,
+      pending: acc.pending + g.pending,
+      rejected: acc.rejected + g.rejected,
+      views: acc.views + g.views,
+    }), { ...EMPTY_TOTALS }),
+    [visibleGroups]
+  );
+
+  const maxGroupTotal = Math.max(1, ...visibleGroups.map(g => g.total));
+  const hasTabFilters = Boolean(programFilter || yearFilter || query);
+  const clearTabFilters = () => {
+    setProgramFilter('');
+    setYearFilter('');
+    setQuery('');
+    setDraftQuery('');
+  };
+  const groupNoun = visibleGroups.length === 1 ? 'program-year group' : 'program-year groups';
 
   const pct = (part, whole) => whole ? Math.round((part / whole) * 100) : 0;
 
@@ -53,6 +118,8 @@ export default function AdminReports() {
 
   const maxViews = Math.max(1, ...topViews.map(t => t.views));
   const maxProg = Math.max(1, ...byProgram.map(p => p.count));
+  const programTotal = Math.max(1, byProgram.reduce((sum, p) => sum + p.count, 0));
+  const maxYearCount = Math.max(1, ...byYear.map(y => y.count));
 
   return (
     <div className="admin-page space-y-6">
@@ -118,9 +185,113 @@ export default function AdminReports() {
         />
       </div>
 
+      {/* Search Breakdown */}
+      <Card>
+        <div className="admin-panel-body">
+          <h2 className="sr-only">Search Breakdown</h2>
+          <form
+            className="admin-filterbar"
+            onSubmit={e => { e.preventDefault(); setQuery(draftQuery.trim()); }}
+          >
+            <div className="admin-search">
+              <Search className="h-4 w-4 shrink-0" />
+              <input
+                type="search"
+                value={draftQuery}
+                onChange={e => setDraftQuery(e.target.value)}
+                placeholder="Search program or year..."
+                aria-label="Search breakdown"
+              />
+            </div>
+            <select
+              className="admin-select"
+              value={programFilter}
+              onChange={e => setProgramFilter(e.target.value)}
+              aria-label="Filter by program"
+            >
+              <option value="">All Programs</option>
+              {programList.map(p => <option key={p.id} value={p.code}>{p.name}</option>)}
+              {hasUnassigned && <option value="__none">Unassigned</option>}
+            </select>
+            <select
+              className="admin-select"
+              value={yearFilter}
+              onChange={e => setYearFilter(e.target.value)}
+              aria-label="Filter by year"
+            >
+              <option value="">All Years</option>
+              {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+            </select>
+            <button type="submit" className="admin-search-btn">
+              <Search className="h-3.5 w-3.5" /> Search
+            </button>
+            {hasTabFilters && (
+              <button type="button" className="admin-filter-reset" onClick={clearTabFilters}>
+                <X className="h-3.5 w-3.5" /> Reset
+              </button>
+            )}
+          </form>
+
+          <p className="mt-4 text-[12.5px] text-[#607B72]">
+            <span className="font-semibold text-forest">{filteredTotals.total}</span> works across{' '}
+            <span className="font-semibold text-forest">{visibleGroups.length}</span> {groupNoun}
+            {' · '}
+            <span className="font-semibold text-forest">{filteredTotals.views.toLocaleString()}</span> views
+          </p>
+
+          <div className="table-scroll mt-3">
+            {visibleGroups.length === 0 ? (
+              <div className="py-10 text-center">
+                <p className="text-[14px] font-semibold text-forest">No data for this selection</p>
+                <p className="mt-1 text-[13px] text-[#607B72]">Try a different program, year, or search term.</p>
+                {hasTabFilters && (
+                  <button type="button" className="admin-filter-reset mt-4" onClick={clearTabFilters}>
+                    <X className="h-3.5 w-3.5" /> Clear filters
+                  </button>
+                )}
+              </div>
+            ) : (
+              <table className="admin-table w-full">
+                <thead>
+                  <tr>
+                    <th>Program</th>
+                    <th>Year</th>
+                    <th>Works</th>
+                    <th className="text-emerald-700">Approved</th>
+                    <th className="text-amber-600">Pending</th>
+                    <th className="text-red-600">Rejected</th>
+                    <th>Views</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {visibleGroups.map(g => (
+                    <tr key={g.key}>
+                      <td><span className="font-medium text-forest">{g.label}</span></td>
+                      <td><span className="font-mono text-[13px] font-semibold text-forest">{g.year}</span></td>
+                      <td>
+                        <div className="flex items-center gap-2">
+                          <span className="w-7 text-right text-[13px] font-semibold text-forest">{g.total}</span>
+                          <div className="h-1.5 w-20 overflow-hidden rounded-full bg-[#E6EDE9] sm:w-28">
+                            <div className="h-full rounded-full bg-emerald-brand" style={{ width: `${(g.total / maxGroupTotal) * 100}%` }} />
+                          </div>
+                        </div>
+                      </td>
+                      <td><span className="font-semibold text-emerald-700">{g.approved}</span></td>
+                      <td><span className="font-semibold text-amber-600">{g.pending}</span></td>
+                      <td><span className="font-semibold text-red-600">{g.rejected}</span></td>
+                      <td><span className="font-mono text-[12.5px] text-[#245D50]">{g.views.toLocaleString()}</span></td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </div>
+        </div>
+      </Card>
+
       <div className="grid gap-5 lg:grid-cols-3">
         {/* Top Viewed Research */}
-        <Card className="lg:col-span-2">
+        <Card className="min-w-0 lg:col-span-2">
           <div className="admin-panel-head">
             <h2 className="admin-panel-title"><Eye className="h-4 w-4 text-emerald-brand" /> Most Viewed Research</h2>
           </div>
@@ -130,20 +301,20 @@ export default function AdminReports() {
             ) : (
               <div className="space-y-2">
                 {topViews.map((item, i) => (
-                  <div key={item.code} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-emerald-50/50 transition">
-                    <span className="font-mono text-xs font-semibold text-muted-green w-4 text-center">{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[12.5px] font-medium text-forest truncate">{item.title}</div>
-                      <div className="text-[11px] text-[#607B72] font-mono">{item.code}</div>
+                  <div key={item.code} className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] font-mono text-[11px] font-bold text-[#0C765E]">{i + 1}</span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-semibold text-forest">{item.title}</div>
+                      <div className="font-mono text-[11px] text-[#607B72]">{item.code}</div>
                     </div>
-                    <div className="w-24">
-                      <div className="flex items-end gap-1">
+                    <div className="flex w-24 shrink-0 items-center gap-2 sm:w-36">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
                         <div
-                          className="bg-emerald-brand rounded-t-lg transition-origin"
-                          style={{ height: `${(item.views / maxViews) * 100}%`, transformOrigin: 'bottom' }}
+                          className="h-full rounded-full bg-emerald-brand"
+                          style={{ width: `${(item.views / maxViews) * 100}%` }}
                         />
-                        <span className="text-[11px] font-mono font-semibold text-[#0C765E]">{item.views}</span>
                       </div>
+                      <span className="w-8 shrink-0 text-right font-mono text-[11px] font-semibold text-[#0C765E]">{item.views}</span>
                     </div>
                   </div>
                 ))}
@@ -153,7 +324,7 @@ export default function AdminReports() {
         </Card>
 
         {/* Research by Program */}
-        <Card>
+        <Card className="min-w-0">
           <div className="admin-panel-head">
             <h2 className="admin-panel-title"><FolderTree className="h-4 w-4 text-emerald-brand" /> Research by Program</h2>
           </div>
@@ -163,19 +334,22 @@ export default function AdminReports() {
             ) : (
               <div className="space-y-2">
                 {byProgram.map((item, i) => (
-                  <div key={item.program} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-emerald-50/50 transition">
-                    <span className="font-mono text-xs font-semibold text-muted-green w-4 text-center">{i + 1}</span>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[12.5px] font-medium text-forest truncate">{item.program}</div>
+                  <div key={item.program} className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] text-[#0C765E]">
+                      <FolderTree className="h-3.5 w-3.5" />
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-[13px] font-semibold text-forest">{item.program || 'Unassigned'}</div>
+                      <div className="text-[11px] text-[#607B72]">{pct(item.count, programTotal)}% of works</div>
                     </div>
-                    <div className="w-24">
-                      <div className="flex items-end gap-1">
+                    <div className="flex w-24 shrink-0 items-center gap-2 sm:w-36">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
                         <div
-                          className="bg-[#08755B] rounded-t-lg transition-origin"
-                          style={{ height: `${(item.count / maxProg) * 100}%`, transformOrigin: 'bottom' }}
+                          className="h-full rounded-full bg-[#08755B]"
+                          style={{ width: `${(item.count / maxProg) * 100}%` }}
                         />
-                        <span className="text-[11px] font-mono font-semibold text-[#0C765E]">{item.count}</span>
                       </div>
+                      <span className="w-8 shrink-0 text-right font-mono text-[11px] font-semibold text-[#0C765E]">{item.count}</span>
                     </div>
                   </div>
                 ))}
@@ -185,7 +359,7 @@ export default function AdminReports() {
         </Card>
 
         {/* Research by Year */}
-        <Card>
+        <Card className="min-w-0">
           <div className="admin-panel-head">
             <h2 className="admin-panel-title"><Calendar className="h-4 w-4 text-emerald-brand" /> Research by Year</h2>
           </div>
@@ -194,22 +368,17 @@ export default function AdminReports() {
               <p className="text-[13.5px] text-muted-green py-8 text-center">No year data yet</p>
             ) : (
               <div className="space-y-2">
-                {byYear.map((item, i) => {
-                  const maxYear = Math.max(1, ...byYear.map(y => y.count));
-                  return (
-                    <div key={item.year} className="flex items-center gap-3 p-2.5 rounded-lg border border-border/50 hover:bg-emerald-50/50 transition">
-                      <span className="font-mono text-xs font-semibold text-muted-green w-8">{item.year}</span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2">
-                          <div className="h-2 bg-[#08755B]/10 rounded-full">
-                            <div className="h-full bg-emerald-brand rounded-full" style={{ width: `${(item.count / maxYear) * 100}%` }} />
-                          </div>
-                          <span className="text-[12px] font-mono font-semibold text-[#0C765E]">{item.count}</span>
-                        </div>
+                {byYear.map(item => (
+                  <div key={item.year} className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40">
+                    <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] font-mono text-[10.5px] font-bold text-[#0C765E]">{item.year}</span>
+                    <div className="flex min-w-0 flex-1 items-center gap-2">
+                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
+                        <div className="h-full rounded-full bg-emerald-brand" style={{ width: `${(item.count / maxYearCount) * 100}%` }} />
                       </div>
+                      <span className="w-8 shrink-0 text-right font-mono text-[11px] font-semibold text-[#0C765E]">{item.count}</span>
                     </div>
-                  );
-                })}
+                  </div>
+                ))}
               </div>
             )}
           </div>
@@ -223,24 +392,28 @@ export default function AdminReports() {
         </div>
         <div className="admin-panel-body grid grid-cols-1 sm:grid-cols-3 gap-4">
           {[
-            { label: 'Approved', value: stats?.approved ?? 0, color: 'bg-emerald-100 text-emerald-700 border-emerald-200', icon: CheckCircle2 },
-            { label: 'Pending', value: stats?.pending ?? 0, color: 'bg-amber-100 text-amber-700 border-amber-200', icon: Clock },
-            { label: 'Rejected', value: stats?.rejected ?? 0, color: 'bg-red-100 text-red-700 border-red-200', icon: XCircle },
-          ].map((item, i) => {
+            { label: 'Approved', value: stats?.approved ?? 0, color: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-600', icon: CheckCircle2 },
+            { label: 'Pending', value: stats?.pending ?? 0, color: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', icon: Clock },
+            { label: 'Rejected', value: stats?.rejected ?? 0, color: 'bg-red-100 text-red-700', bar: 'bg-red-500', icon: XCircle },
+          ].map(item => {
             const total = (stats?.approved ?? 0) + (stats?.pending ?? 0) + (stats?.rejected ?? 0);
             return (
-              <div key={item.label} className="p-4 rounded-2xl border border-border/50 bg-white/50">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <item.icon className={`h-4 w-4 ${item.color.split(' ')[0]}`} />
-                    <span className="text-sm font-semibold text-forest">{item.label}</span>
+              <div key={item.label} className="rounded-2xl border border-[#E6EDE9] bg-white p-4 transition hover:border-[#CFE2DA]">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex min-w-0 items-center gap-2.5">
+                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.color}`}>
+                      <item.icon className="h-4 w-4" />
+                    </span>
+                    <div className="min-w-0">
+                      <div className="text-[13px] font-semibold text-forest">{item.label}</div>
+                      <div className="text-[11px] text-[#607B72]">{total ? `${pct(item.value, total)}% of total` : '0%'}</div>
+                    </div>
                   </div>
-                  <span className="text-xs font-mono font-semibold text-muted-green">{item.value}</span>
+                  <span className="shrink-0 font-mono text-[16px] font-semibold text-forest">{item.value}</span>
                 </div>
-                <div className="h-1.5 bg-[#E6EDE9] rounded-full overflow-hidden">
-                  <div className="h-full rounded-full bg-emerald-brand" style={{ width: total ? `${(item.value / total) * 100}%` : '0%' }} />
+                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#E6EDE9]">
+                  <div className={`h-full rounded-full ${item.bar}`} style={{ width: total ? `${(item.value / total) * 100}%` : '0%' }} />
                 </div>
-                <p className="text-[11px] text-[#607B72] mt-1">{total ? `${pct(item.value, total)}% of total` : '0%'}</p>
               </div>
             );
           })}
