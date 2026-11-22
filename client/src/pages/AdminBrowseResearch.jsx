@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../context/AuthContext';
-import { coverGradient, formatDate, pluralize } from '../lib/format';
+import { coverGradient, pluralize } from '../lib/format';
 import {
   Landmark, Search, SlidersHorizontal, FileText, FolderTree, BookOpen,
   ArrowRight, Users, X, Edit, Trash2, CheckCircle2, XCircle,
@@ -400,18 +400,17 @@ function AdminBrowseResearchContent() {
               )}
             </div>
           ) : (
-            <table className="research-table table-auto min-w-[980px]">
+            <table className="admin-table w-full table-fixed min-w-[1186px] border-collapse">
               <thead>
                 <tr>
-                  <th style={{ width: 52 }}><span className="sr-only">Cover</span></th>
-                  <th>Title</th>
-                  <th>Author(s)</th>
-                  <th>Program</th>
-                  <th>Year</th>
-                  <th style={{ width: 70 }}>Views</th>
-                  <th>Status</th>
-                  <th>Date Added</th>
-                  <th style={{ width: 180 }}>Actions</th>
+                  <th style={{ width: 56 }}><span className="sr-only">Cover</span></th>
+                  <th style={{ width: 300 }}>Title</th>
+                  <th style={{ width: 190 }}>Author(s)</th>
+                  <th style={{ width: 170 }}>Program</th>
+                  <th className="text-center" style={{ width: 56 }}>Year</th>
+                  <th className="text-center" style={{ width: 60 }}>Views</th>
+                  <th style={{ width: 110 }}>Status</th>
+                  <th className="text-right" style={{ width: 244 }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
@@ -423,67 +422,66 @@ function AdminBrowseResearchContent() {
                       </div>
                     </td>
                     <td>
-                      <div className="cell-title">{r.title}</div>
-                      {r.adviser && <div className="cell-author">Adviser: {r.adviser}</div>}
+                      <div className="truncate text-[14px] font-semibold leading-[1.4] text-forest" title={r.title}>{r.title}</div>
+                      {r.adviser && <div className="mt-1 truncate text-[12px] text-[#607B72]" title={`Adviser: ${r.adviser}`}>Adviser: {r.adviser}</div>}
                     </td>
-                    <td><div className="cell-author">{r.authors || 'Unattributed'}</div></td>
+                    <td>
+                      <div className="truncate text-[13px] leading-[1.5] text-[#55736C]" title={r.authors || 'Unattributed'}>{r.authors || 'Unattributed'}</div>
+                    </td>
                     <td>
                       {r.program_name
-                        ? <span className="program-pill">{r.program_name}</span>
+                        ? <span className="program-pill inline-block max-w-full truncate align-middle" title={r.program_name}>{r.program_name}</span>
                         : <span className="text-[13px] text-[#A3B5AF]">—</span>}
                     </td>
-                    <td><span className="text-[14px]">{r.year || '—'}</span></td>
-                    <td><span className="text-[14px] font-mono text-muted-green">{r.view_count ?? 0}</span></td>
+                    <td className="text-center"><span className="font-mono text-[13px] font-semibold text-forest">{r.year || '—'}</span></td>
+                    <td className="text-center"><span className="font-mono text-[13px] text-muted-green">{r.view_count ?? 0}</span></td>
                     <td>
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusConfig[r.status]?.class || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
+                      <span className={`inline-flex items-center whitespace-nowrap rounded-full border px-2.5 py-1 text-[11px] font-semibold ${statusConfig[r.status]?.class || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                         {statusConfig[r.status]?.label || r.status}
                       </span>
                     </td>
-                    <td><span className="text-[14px]">{formatDate(r.created_at) || '—'}</span></td>
                     <td>
-                      <div className="flex items-center gap-1.5">
-                        <Link to={`/admin/research/${r.id}`} className="view-details inline-flex items-center gap-1 text-[13.5px] font-semibold" title="View Admin Page">
-                          View <ArrowRight className="h-3 w-3" />
+                      <div className="flex items-center justify-end gap-1 whitespace-nowrap">
+                        <Link to={`/admin/research/${r.id}`} className="view-details flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[#0C765E] transition hover:bg-soft-green" title="View" aria-label={`View ${r.title}`}>
+                          <ArrowRight className="h-4 w-4" />
                         </Link>
-                        <Link to={`/edit-research/${r.id}`} className="p-2 rounded-full text-muted-green hover:bg-soft-green hover:text-forest transition" title="Edit">
+                        <Link to={`/edit-research/${r.id}`} className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-muted-green transition hover:bg-soft-green hover:text-forest" title="Edit">
                           <Edit className="h-4 w-4" />
                         </Link>
-                        <div className="flex gap-1">
-                          {r.status !== 'approved' && (
-                            <button
-                              className="p-2 rounded-full text-emerald-600 hover:bg-emerald-50 transition"
-                              onClick={() => handleStatusChange(r.id, 'approved')}
-                              title="Approve"
-                            >
-                              <CheckCircle2 className="h-4 w-4" />
-                            </button>
-                          )}
-                          {r.status !== 'rejected' && (
-                            <button
-                              className="p-2 rounded-full text-red-600 hover:bg-red-50 transition"
-                              onClick={() => handleStatusChange(r.id, 'rejected')}
-                              title="Reject"
-                            >
-                              <XCircle className="h-4 w-4" />
-                            </button>
-                          )}
-                          {r.status !== 'pending' && (
-                            <button
-                              className="p-2 rounded-full text-amber-600 hover:bg-amber-50 transition"
-                              onClick={() => handleStatusChange(r.id, 'pending')}
-                              title="Move to Pending"
-                            >
-                              <RotateCcw className="h-4 w-4" />
-                            </button>
-                          )}
+                        {r.status !== 'approved' && (
                           <button
-                            className="p-2 rounded-full text-red-500 hover:bg-red-50 transition"
-                            onClick={() => handleDelete(r.id)}
-                            title="Delete"
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-emerald-600 transition hover:bg-emerald-50"
+                            onClick={() => handleStatusChange(r.id, 'approved')}
+                            title="Approve"
                           >
-                            <Trash2 className="h-4 w-4" />
+                            <CheckCircle2 className="h-4 w-4" />
                           </button>
-                        </div>
+                        )}
+                        {r.status !== 'rejected' && (
+                          <button
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-red-600 transition hover:bg-red-50"
+                            onClick={() => handleStatusChange(r.id, 'rejected')}
+                            title="Reject"
+                          >
+                            <XCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                        {r.status !== 'pending' && (
+                          <button
+                            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-amber-600 transition hover:bg-amber-50"
+                            onClick={() => handleStatusChange(r.id, 'pending')}
+                            title="Move to Pending"
+                          >
+                            <RotateCcw className="h-4 w-4" />
+                          </button>
+                        )}
+                        <button
+                          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-red-500 transition hover:bg-red-50"
+                          onClick={() => handleDelete(r.id)}
+                          title="Delete"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </td>
                   </tr>
