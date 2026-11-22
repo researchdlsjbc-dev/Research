@@ -30,7 +30,8 @@ const router = express.Router();
 
 const SELECT_FIELDS = `r.id::int AS id, r.code, r.title, r.authors, r.adviser,
          r.program_id, r.year,
-         r.abstract, r.keywords, r.submitted_by, r.status, r.created_at`;
+         r.abstract, r.keywords, r.submitted_by, r.status, r.created_at,
+         COALESCE(r.view_count, 0)::int AS view_count`;
 
 const SELECT_FROM = `p.name AS program_name, p.code AS program_code,
          u.full_name AS submitted_by_name,
@@ -363,6 +364,7 @@ router.post('/:id/pdf/access-code/regenerate', authenticateToken, requireAdmin, 
 
 router.get('/:id', async (req, res) => {
   try {
+    await pool.query('UPDATE research SET view_count = COALESCE(view_count, 0) + 1 WHERE id = $1', [req.params.id]);
     const SELECT = await getSelect();
     const { rows } = await pool.query(`${SELECT.fields} WHERE r.id = $1 ${SELECT.groupBy}`, [req.params.id]);
     if (!rows[0]) return res.status(404).json({ error: 'Not found' });

@@ -11,12 +11,13 @@ import { Input } from '../components/ui/input';
 import { Label } from '../components/ui/label';
 import BookOpening from '../components/BookOpening';
 import LockedAbstract from '../components/LockedAbstract';
-import { ArrowLeft, Users, Award, FolderTree, Calendar, FileText, Tags, CheckCircle2, XCircle, BookOpen, Share2, Bookmark, ExternalLink, ChevronDown, ChevronUp, KeyRound, Loader2 } from 'lucide-react';
+import { ArrowLeft, Users, Award, FolderTree, Calendar, FileText, Tags, CheckCircle2, XCircle, BookOpen, Share2, Bookmark, ExternalLink, ChevronDown, ChevronUp, KeyRound, Loader2, Eye } from 'lucide-react';
 
 const rowMeta = {
   adviser: { icon: Award, tint: 'bg-amber-100 text-amber-700' },
   program: { icon: FolderTree, tint: 'bg-[#08755B]/15 text-[#0C765E]' },
   year: { icon: Calendar, tint: 'bg-sky-100 text-sky-700' },
+  views: { icon: Eye, tint: 'bg-[#08755B]/15 text-[#0C765E]' },
   code: { icon: FileText, tint: 'bg-orange-100 text-orange-700' },
 };
 
@@ -67,6 +68,7 @@ export default function ResearchDetail() {
     { key: 'adviser', label: 'Adviser', value: research.adviser || 'N/A' },
     { key: 'program', label: 'Program', value: research.program_name ? `${research.program_name} (${research.program_code})` : 'N/A' },
     { key: 'year', label: 'Year', value: research.year },
+    { key: 'views', label: 'Views', value: research.view_count ?? 0 },
   ];
 
   const triggerView = (data) => {

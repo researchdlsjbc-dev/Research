@@ -56,6 +56,7 @@ CREATE TABLE IF NOT EXISTS research (
   submitted_by  BIGINT REFERENCES users(id),
   status        TEXT NOT NULL DEFAULT 'pending' CHECK (status IN ('approved', 'pending', 'rejected')),
   is_featured   BOOLEAN NOT NULL DEFAULT false,  -- admin-curated "featured book" shelf
+  view_count    BIGINT NOT NULL DEFAULT 0,       -- number of times the detail page was viewed
   created_at    TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -98,6 +99,7 @@ ALTER TABLE research ADD COLUMN IF NOT EXISTS pdf_content_type TEXT;
 ALTER TABLE research ADD COLUMN IF NOT EXISTS pdf_access_code TEXT;
 ALTER TABLE research ADD COLUMN IF NOT EXISTS pdf_access_code_updated_at TIMESTAMPTZ;
 ALTER TABLE research ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE research ADD COLUMN IF NOT EXISTS view_count BIGINT NOT NULL DEFAULT 0;
 
 COMMENT ON COLUMN research.pdf_path IS 'Supabase Storage object path under pdfs/<research-code>/';
 COMMENT ON COLUMN research.pdf_file_name IS 'Original display name of the attached PDF';
@@ -105,6 +107,7 @@ COMMENT ON COLUMN research.pdf_size IS 'PDF size in bytes';
 COMMENT ON COLUMN research.pdf_content_type IS 'PDF MIME type (application/pdf)';
 COMMENT ON COLUMN research.pdf_access_code IS 'Code required to download the attached PDF; never exposed by public APIs';
 COMMENT ON COLUMN research.pdf_access_code_updated_at IS 'When the PDF access code was generated or regenerated';
+COMMENT ON COLUMN research.view_count IS 'Number of times the research detail page was viewed (viewer count)';
 COMMENT ON TABLE research_pdf_access_attempts IS 'Failed PDF access-code attempts used for rate limiting';
 
 -- Indexes used by the search / filter queries
@@ -113,6 +116,7 @@ CREATE UNIQUE INDEX IF NOT EXISTS idx_research_pdf_access_code ON research (pdf_
 CREATE INDEX IF NOT EXISTS idx_research_pdf_attempts_lookup ON research_pdf_access_attempts (research_id, ip_hash, created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_research_pdf_attempts_created ON research_pdf_access_attempts (created_at);
 CREATE INDEX IF NOT EXISTS idx_research_featured  ON research (is_featured) WHERE is_featured;
+CREATE INDEX IF NOT EXISTS idx_research_view_count ON research (view_count DESC);
 CREATE INDEX IF NOT EXISTS idx_research_year      ON research (year);
 CREATE INDEX IF NOT EXISTS idx_research_program   ON research (program_id);
 CREATE INDEX IF NOT EXISTS idx_users_role         ON users (role);
@@ -351,7 +355,9 @@ ALTER TABLE research ADD COLUMN IF NOT EXISTS call_number TEXT;
 
 -- 2b) Admin-curated "featured book" flag (drives the Featured Books shelf)
 ALTER TABLE research ADD COLUMN IF NOT EXISTS is_featured BOOLEAN NOT NULL DEFAULT false;
+ALTER TABLE research ADD COLUMN IF NOT EXISTS view_count BIGINT NOT NULL DEFAULT 0;
 CREATE INDEX IF NOT EXISTS idx_research_featured ON research (is_featured) WHERE is_featured;
+CREATE INDEX IF NOT EXISTS idx_research_view_count ON research (view_count DESC);
 
 -- 3) Insert the research works
 --    code format matches the app: RS-<year>-<sequence>

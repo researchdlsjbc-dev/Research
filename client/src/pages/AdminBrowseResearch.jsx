@@ -408,6 +408,7 @@ function AdminBrowseResearchContent() {
                   <th>Author(s)</th>
                   <th>Program</th>
                   <th>Year</th>
+                  <th style={{ width: 70 }}>Views</th>
                   <th>Status</th>
                   <th>Date Added</th>
                   <th style={{ width: 180 }}>Actions</th>
@@ -432,6 +433,7 @@ function AdminBrowseResearchContent() {
                         : <span className="text-[13px] text-[#A3B5AF]">—</span>}
                     </td>
                     <td><span className="text-[14px]">{r.year || '—'}</span></td>
+                    <td><span className="text-[14px] font-mono text-muted-green">{r.view_count ?? 0}</span></td>
                     <td>
                       <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[11px] font-semibold ${statusConfig[r.status]?.class || 'bg-slate-100 text-slate-700 border-slate-200'}`}>
                         {statusConfig[r.status]?.label || r.status}

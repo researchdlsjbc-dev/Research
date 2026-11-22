@@ -104,7 +104,7 @@ export default function AdminResearch() {
           <Table className="admin-table">
             <TableHeader>
               <TableRow className="border-0 hover:bg-transparent">
-                <TableHead>Code</TableHead><TableHead>Title</TableHead><TableHead>Authors</TableHead><TableHead>Year</TableHead><TableHead>Status</TableHead><TableHead className="text-center">Featured</TableHead><TableHead className="text-right">Actions</TableHead>
+                <TableHead>Code</TableHead><TableHead>Title</TableHead><TableHead>Authors</TableHead><TableHead>Year</TableHead><TableHead className="text-center">Views</TableHead><TableHead>Status</TableHead><TableHead className="text-center">Featured</TableHead><TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -116,6 +116,7 @@ export default function AdminResearch() {
                   </TableCell>
                   <TableCell className="text-muted-green">{r.authors}</TableCell>
                   <TableCell className="font-mono text-muted-green">{r.year}</TableCell>
+                  <TableCell className="text-center font-mono text-muted-green">{r.view_count ?? 0}</TableCell>
                   <TableCell><Badge variant={r.status} className="capitalize">{r.status}</Badge></TableCell>
                   <TableCell className="text-center">
                     <Button
@@ -140,7 +141,7 @@ export default function AdminResearch() {
                   </TableCell>
                 </TableRow>
               ))}
-              {research.length === 0 && <TableRow className="border-0"><TableCell colSpan={7} className="py-14 text-center text-[13.5px] text-muted-green">No research found</TableCell></TableRow>}
+              {research.length === 0 && <TableRow className="border-0"><TableCell colSpan={8} className="py-14 text-center text-[13.5px] text-muted-green">No research found</TableCell></TableRow>}
             </TableBody>
           </Table>
         </div>
