@@ -266,6 +266,14 @@
     background-position: center;
     background-repeat: no-repeat;
   }
+  /* Public heroes share one photo band so the image stays aligned page to page */
+  @media (min-width: 1024px) {
+    .hero-image,
+    .catalog-hero,
+    .about-hero {
+      min-height: 560px;
+    }
+  }
 
   .stat-card {
     background: rgba(255, 255, 255, 0.85);
@@ -740,9 +748,6 @@
     background-position: center;
     background-repeat: no-repeat;
   }
-  .catalog-hero {
-    background-position: center 20%;
-  }
   .catalog-title {
     font-family: "Cormorant Garamond", "Playfair Display", serif;
     font-size: clamp(28px, 5vw, 42px);
@@ -1109,7 +1114,7 @@
     position: relative;
     background-image: url("/img/Background.png");
     background-size: cover;
-    background-position: center 30%;
+    background-position: center;
     background-repeat: no-repeat;
   }
   .about-page-title {
@@ -2071,10 +2076,6 @@
   @media (max-width: 640px) {
     .catalog-layout {
       gap: 16px;
-    }
-    .catalog-hero .container-page {
-      padding-top: 72px;
-      padding-bottom: 104px;
     }
     .catalog-title {
       font-size: 32px;
