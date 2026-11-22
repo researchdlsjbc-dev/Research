@@ -10,7 +10,7 @@ import {
   LayoutDashboard, FileText, Users, FolderTree, Eye, BarChart3, Clock, CheckCircle2, XCircle, ArrowRight, TrendingUp, TrendingDown, Calendar
 } from 'lucide-react';
 
-const statCard = ({ label, value, icon: Icon, chip, trend, trendLabel }) => (
+const StatCard = ({ label, value, icon: Icon, chip, trend, trendLabel }) => (
   <div className="admin-stat">
     <div className={`admin-stat-chip ${chip}`}><Icon className="h-5 w-5" /></div>
     <div className="min-w-0">
@@ -72,13 +72,13 @@ export default function AdminReports() {
 
       {/* Key Metrics */}
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
-        <statCard
+        <StatCard
           label="Total Research"
           value={stats?.total ?? 0}
           icon={FileText}
           chip="bg-[#E8F3EE] text-[#0C765E]"
         />
-        <statCard
+        <StatCard
           label="Total Views"
           value={stats?.total_views ?? 0}
           icon={Eye}
@@ -86,31 +86,31 @@ export default function AdminReports() {
           trend={stats?.total ? pct(stats?.approved ?? 0, stats?.total) : 0}
           trendLabel="Approval rate"
         />
-        <statCard
+        <StatCard
           label="Users"
           value={stats?.users ?? 0}
           icon={Users}
           chip="bg-pale-green text-[#0C765E]"
         />
-        <statCard
+        <StatCard
           label="Programs"
           value={stats?.programs ?? 0}
           icon={FolderTree}
           chip="bg-mint-dark text-deep-green"
         />
-        <statCard
+        <StatCard
           label="Approved"
           value={stats?.approved ?? 0}
           icon={CheckCircle2}
           chip="bg-emerald-100 text-emerald-700"
         />
-        <statCard
+        <StatCard
           label="Pending"
           value={stats?.pending ?? 0}
           icon={Clock}
           chip="bg-amber-100 text-amber-700"
         />
-        <statCard
+        <StatCard
           label="Rejected"
           value={stats?.rejected ?? 0}
           icon={XCircle}
@@ -245,7 +245,7 @@ export default function AdminReports() {
             );
           })}
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
