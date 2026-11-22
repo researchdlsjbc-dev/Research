@@ -2185,3 +2185,35 @@
     }
   }
 }
+
+/* ================================================================
+   Print / Export PDF
+   ================================================================ */
+@media print {
+  @page {
+    margin: 12mm;
+  }
+  html,
+  body {
+    background: #FFFFFF !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .admin-page {
+    max-width: none !important;
+  }
+  .glass {
+    background: #FFFFFF !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+  .admin-stat {
+    break-inside: avoid;
+  }
+  .table-scroll {
+    overflow: visible !important;
+  }
+  .admin-table {
+    min-width: 0 !important;
+  }
+}

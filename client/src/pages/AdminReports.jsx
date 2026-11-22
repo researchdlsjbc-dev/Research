@@ -7,7 +7,7 @@ import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import {
-  LayoutDashboard, FileText, Users, FolderTree, Eye, BarChart3, Clock, CheckCircle2, XCircle, ArrowRight, TrendingUp, TrendingDown, Calendar, Search, X
+  LayoutDashboard, FileText, Users, FolderTree, Eye, BarChart3, Clock, CheckCircle2, XCircle, ArrowRight, TrendingUp, TrendingDown, Calendar, Search, X, Printer
 } from 'lucide-react';
 
 const StatCard = ({ label, value, icon: Icon, chip, trend, trendLabel }) => (
@@ -114,6 +114,14 @@ export default function AdminReports() {
 
   const pct = (part, whole) => whole ? Math.round((part / whole) * 100) : 0;
 
+  const handleExportPdf = () => {
+    const previousTitle = document.title;
+    const stamp = new Date().toLocaleDateString('en-CA');
+    document.title = `ResearchHub Reports ${stamp}`;
+    window.print();
+    document.title = previousTitle;
+  };
+
   if (loading) return <div className="admin-page flex h-64 items-center justify-center"><div className="text-[15px] font-semibold text-muted-green">Loading analytics...</div></div>;
 
   const maxViews = Math.max(1, ...topViews.map(t => t.views));
@@ -131,10 +139,18 @@ export default function AdminReports() {
           </span>
           <h1 className="admin-title mt-3">Reports <em>&amp; Analytics</em></h1>
           <p className="admin-subtitle">Repository performance and viewer insights</p>
+          <p className="mt-1 hidden text-[12px] text-[#607B72] print:block">
+            Generated {new Date().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
+          </p>
         </div>
-        <Link to="/admin/research" className="text-[13px] font-semibold text-[#0C765E] transition hover:text-forest">
-          View Catalog <ArrowRight className="h-3.5 w-3.5" />
-        </Link>
+        <div className="flex items-center gap-4 print:hidden">
+          <Link to="/admin/research" className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold text-[#0C765E] transition hover:text-forest">
+            View Catalog <ArrowRight className="h-3.5 w-3.5" />
+          </Link>
+          <Button onClick={handleExportPdf} className="h-9 shrink-0 rounded-full px-4 text-[13px]">
+            <Printer className="h-4 w-4" /> Export PDF
+          </Button>
+        </div>
       </div>
 
       {/* Key Metrics */}
@@ -222,11 +238,11 @@ export default function AdminReports() {
               <option value="">All Years</option>
               {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
             </select>
-            <button type="submit" className="admin-search-btn">
+            <button type="submit" className="admin-search-btn print:hidden">
               <Search className="h-3.5 w-3.5" /> Search
             </button>
             {hasTabFilters && (
-              <button type="button" className="admin-filter-reset" onClick={clearTabFilters}>
+              <button type="button" className="admin-filter-reset print:hidden" onClick={clearTabFilters}>
                 <X className="h-3.5 w-3.5" /> Reset
               </button>
             )}
@@ -245,7 +261,7 @@ export default function AdminReports() {
                 <p className="text-[14px] font-semibold text-forest">No data for this selection</p>
                 <p className="mt-1 text-[13px] text-[#607B72]">Try a different program, year, or search term.</p>
                 {hasTabFilters && (
-                  <button type="button" className="admin-filter-reset mt-4" onClick={clearTabFilters}>
+                  <button type="button" className="admin-filter-reset mt-4 print:hidden" onClick={clearTabFilters}>
                     <X className="h-3.5 w-3.5" /> Clear filters
                   </button>
                 )}

@@ -87,8 +87,8 @@ export default function Sidebar({ open = false, onClose = () => {} }) {
 
   return (
     <>
-      <div className={`fixed inset-0 z-40 bg-[#062A22]/45 transition-opacity md:hidden ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={handleNav} />
-      <div className={`fixed bottom-0 left-0 top-0 z-50 transition-transform duration-200 md:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}>
+      <div className={`fixed inset-0 z-40 bg-[#062A22]/45 transition-opacity md:hidden print:hidden ${open ? 'opacity-100' : 'pointer-events-none opacity-0'}`} onClick={handleNav} />
+      <div className={`fixed bottom-0 left-0 top-0 z-50 transition-transform duration-200 md:translate-x-0 print:hidden ${open ? 'translate-x-0' : '-translate-x-full'}`}>
         {inner}
       </div>
     </>

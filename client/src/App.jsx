@@ -61,8 +61,8 @@ function AdminLayout({ children }) {
   return (
     <div className="min-h-screen bg-cream">
       <Sidebar open={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-      <div className="md:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[#E6EDE9] bg-white/90 px-4 backdrop-blur-md md:hidden">
+      <div className="md:pl-64 print:pl-0">
+        <header className="sticky top-0 z-30 flex h-16 items-center gap-3 border-b border-[#E6EDE9] bg-white/90 px-4 backdrop-blur-md md:hidden print:hidden">
           <button onClick={() => setSidebarOpen(true)} aria-label="Open navigation" className="-ml-2 rounded-lg p-2 text-muted-green transition hover:bg-soft-green hover:text-forest">
             <Menu className="h-5 w-5" />
           </button>
@@ -76,7 +76,7 @@ function AdminLayout({ children }) {
           </div>
           <span className="ml-auto rounded-full bg-soft-green px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.12em] text-[#176653]">Admin</span>
         </header>
-        <main className="px-4 py-6 md:px-8 md:py-9">{children}</main>
+        <main className="px-4 py-6 md:px-8 md:py-9 print:p-0">{children}</main>
       </div>
     </div>
   );
