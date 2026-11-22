@@ -5,7 +5,7 @@ import { API } from '../context/AuthContext';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
-import { BookOpen, CheckCircle2, Clock, XCircle, Users, FolderTree, ArrowRight, FileText, LayoutDashboard, BarChart3, Eye } from 'lucide-react';
+import { BookOpen, CheckCircle2, Clock, XCircle, Users, FolderTree, ArrowRight, FileText, LayoutDashboard, BarChart3 } from 'lucide-react';
 
 const StatusIcon = ({ status }) => {
   const map = { approved: CheckCircle2, pending: Clock, rejected: XCircle };
@@ -31,7 +31,6 @@ export default function Dashboard() {
     { label: 'Rejected', value: stats.rejected, icon: XCircle, chip: 'bg-red-50 text-red-600' },
     { label: 'Users', value: stats.users, icon: Users, chip: 'bg-pale-green text-[#0C765E]' },
     { label: 'Programs', value: stats.programs, icon: FolderTree, chip: 'bg-mint-dark text-deep-green' },
-    { label: 'Total Views', value: stats.total_views, icon: Eye, chip: 'bg-soft-blue text-blue-700' },
   ];
 
   return (
