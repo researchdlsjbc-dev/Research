@@ -14,7 +14,7 @@ import {
 } from '../components/ui/dialog';
 import { Checkbox } from '../components/ui/checkbox';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../components/ui/tabs';
-import { Info, BookMarked, FileText, ArrowLeft, Plus, UserPlus, Search, X, Save, Loader2, Paperclip, Upload, FileCheck2, Trash2, KeyRound, Copy, RefreshCw } from 'lucide-react';
+import { Info, BookMarked, FileText, ArrowLeft, Plus, UserPlus, Search, X, Save, Loader2, Paperclip, Upload, FileCheck2, Trash2, KeyRound, Copy } from 'lucide-react';
 
 export default function SubmitResearch() {
   const { id } = useParams();
@@ -37,6 +37,7 @@ export default function SubmitResearch() {
   const [pdfBusy, setPdfBusy] = useState(false);
   const [pdfError, setPdfError] = useState('');
   const [accessCode, setAccessCode] = useState('');
+  const [accessInput, setAccessInput] = useState('');
   const [accessCodeUpdatedAt, setAccessCodeUpdatedAt] = useState(null);
   const [accessBusy, setAccessBusy] = useState(false);
   const [accessError, setAccessError] = useState('');
@@ -75,6 +76,7 @@ export default function SubmitResearch() {
       });
       axios.get(`${API}/research/${id}/pdf/access-code`).then(r => {
         setAccessCode(r.data.code || '');
+        setAccessInput(r.data.code || '');
         setAccessCodeUpdatedAt(r.data.updated_at || null);
       }).catch(err => {
         setAccessError(err.response?.data?.error || 'Unable to load the PDF access code.');
@@ -169,18 +171,23 @@ export default function SubmitResearch() {
     }
   };
 
-  const handleRegenerateAccessCode = async () => {
+  const handleSaveAccessCode = async () => {
     if (!id || accessBusy) return;
-    if (!window.confirm('Generate a new access code? The current code will stop working immediately.')) return;
+    const code = accessInput.trim();
+    if (!code) {
+      setAccessError('Enter an access code first.');
+      return;
+    }
     setAccessBusy(true);
     setAccessError('');
     try {
-      const { data } = await axios.post(`${API}/research/${id}/pdf/access-code/regenerate`);
+      const { data } = await axios.put(`${API}/research/${id}/pdf/access-code`, { code });
       setAccessCode(data.code || '');
+      setAccessInput(data.code || '');
       setAccessCodeUpdatedAt(data.updated_at || null);
       setAccessCopied(false);
     } catch (err) {
-      setAccessError(err.response?.data?.error || 'Unable to regenerate the access code.');
+      setAccessError(err.response?.data?.error || 'Unable to save the access code.');
     } finally {
       setAccessBusy(false);
     }
@@ -216,6 +223,7 @@ export default function SubmitResearch() {
     setError('');
     try {
       const payload = { ...form, author_ids: selectedAuthorIds };
+      if (isAdmin && accessInput.trim()) payload.pdf_access_code = accessInput.trim();
       const { data: saved } = isEdit
         ? await axios.put(`${API}/research/${id}`, payload)
         : await axios.post(`${API}/research/`, payload);
@@ -450,25 +458,37 @@ export default function SubmitResearch() {
                       </span>
                     )}
                   </div>
-                  {id ? (
-                    <>
-                      <div className="mt-4 flex flex-wrap gap-2">
-                        <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green hover:bg-soft-green hover:text-forest" onClick={handleCopyAccessCode} disabled={!accessCode || accessBusy}>
-                          <Copy className="h-4 w-4" /> {accessCopied ? 'Copied' : 'Copy Code'}
-                        </Button>
-                        <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green hover:bg-soft-green hover:text-forest" onClick={handleRegenerateAccessCode} disabled={accessBusy}>
-                          {accessBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />} Regenerate
-                        </Button>
-                      </div>
-                      {accessCodeUpdatedAt && (
-                        <p className="mt-2 text-[11px] text-muted-green">
-                          Last updated {new Date(accessCodeUpdatedAt).toLocaleString()}
-                        </p>
+                  <div className="mt-4 space-y-2">
+                    <Label htmlFor="pdf-access-code-input">Access code</Label>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Input
+                        id="pdf-access-code-input"
+                        value={accessInput}
+                        onChange={e => { setAccessInput(e.target.value); setAccessError(''); }}
+                        placeholder="e.g. DLSU2026"
+                        maxLength={32}
+                        autoComplete="off"
+                        className="w-full max-w-[260px] rounded-xl border-[#DCEBE5] bg-ivory font-mono uppercase tracking-wider"
+                        disabled={accessBusy}
+                      />
+                      {id && (
+                        <>
+                          <Button type="button" onClick={handleSaveAccessCode} disabled={accessBusy || !accessInput.trim()} className="gradient-btn rounded-full text-[13px]">
+                            {accessBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} Save Code
+                          </Button>
+                          <Button type="button" variant="outline" className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green hover:bg-soft-green hover:text-forest" onClick={handleCopyAccessCode} disabled={!accessCode || accessBusy}>
+                            <Copy className="h-4 w-4" /> {accessCopied ? 'Copied' : 'Copy Code'}
+                          </Button>
+                        </>
                       )}
-                    </>
-                  ) : (
-                    <p className="mt-3 rounded-xl bg-[#F4F8F6] px-3 py-2 text-[12px] text-muted-green">
-                      A unique access code will be generated automatically when this research is saved.
+                    </div>
+                    <p className="text-[11.5px] text-muted-green">
+                      4–32 letters or numbers. {id ? 'Saving replaces the current code immediately.' : 'This code is stored when the research is saved.'}
+                    </p>
+                  </div>
+                  {id && accessCode && accessCodeUpdatedAt && (
+                    <p className="mt-2 text-[11px] text-muted-green">
+                      Last updated {new Date(accessCodeUpdatedAt).toLocaleString()}
                     </p>
                   )}
                   {accessError && <p className="mt-2 text-[12.5px] font-medium text-red-600">{accessError}</p>}

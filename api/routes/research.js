@@ -17,8 +17,10 @@ const {
   validatePdfObjectPath
 } = require('../researchPdf');
 const {
-  generateAccessCode,
-  formatAccessCode,
+  USER_ACCESS_CODE_MIN_LENGTH,
+  USER_ACCESS_CODE_MAX_LENGTH,
+  normalizeAccessCode,
+  isValidUserAccessCode,
   accessCodesMatch,
   getClientIp,
   hashClientIp
@@ -145,13 +147,16 @@ async function loadPdfTarget(id, user) {
   return row;
 }
 
-async function createUniqueAccessCode(queryable) {
-  for (let attempt = 0; attempt < 10; attempt += 1) {
-    const code = generateAccessCode();
-    const { rows } = await queryable.query('SELECT 1 FROM research WHERE pdf_access_code = $1', [code]);
-    if (!rows[0]) return code;
-  }
-  throw httpError(500, 'Unable to generate an access code.', 'ACCESS_CODE_GENERATION_FAILED');
+async function assertAccessCodeAvailable(queryable, code, excludeId = null) {
+  const { rows } = await queryable.query(
+    'SELECT id FROM research WHERE pdf_access_code = $1 AND ($2::bigint IS NULL OR id <> $2)',
+    [code, excludeId]
+  );
+  if (rows[0]) throw httpError(409, 'That access code is already in use.', 'ACCESS_CODE_TAKEN');
+}
+
+function accessCodeValidationMessage() {
+  return `Access codes must be ${USER_ACCESS_CODE_MIN_LENGTH}-${USER_ACCESS_CODE_MAX_LENGTH} letters or numbers.`;
 }
 
 async function fetchAccessCodeRow(id) {
@@ -162,25 +167,6 @@ async function fetchAccessCodeRow(id) {
   );
   if (!rows[0]) throw httpError(404, 'Not found', 'NOT_FOUND');
   return rows[0];
-}
-
-async function ensureAccessCode(id) {
-  const row = await fetchAccessCodeRow(id);
-  if (row.pdf_access_code) return { code: row.pdf_access_code, updated_at: row.pdf_access_code_updated_at };
-  try {
-    const code = await createUniqueAccessCode(pool);
-    const { rows } = await pool.query(
-      `UPDATE research
-       SET pdf_access_code = $1, pdf_access_code_updated_at = now()
-       WHERE id = $2
-       RETURNING pdf_access_code AS code, pdf_access_code_updated_at AS updated_at`,
-      [code, id]
-    );
-    return rows[0];
-  } catch (err) {
-    if (err && err.code === '23505') return ensureAccessCode(id);
-    throw err;
-  }
 }
 
 async function enforceAccessAttemptLimit(researchId, ipHash) {
@@ -334,14 +320,17 @@ router.post('/:id/pdf/access', async (req, res) => {
 router.get('/:id/pdf/access-code', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await loadSchema();
-    const code = await ensureAccessCode(req.params.id);
-    res.json({ code: formatAccessCode(code.code), updated_at: code.updated_at });
+    const row = await fetchAccessCodeRow(req.params.id);
+    res.json({
+      code: row.pdf_access_code || null,
+      updated_at: row.pdf_access_code_updated_at || null
+    });
   } catch (err) {
     sendResearchError(res, err, 'PDF access code', { expose: req.user.role === 'admin' });
   }
 });
 
-router.post('/:id/pdf/access-code/regenerate', authenticateToken, requireAdmin, async (req, res) => {
+router.put('/:id/pdf/access-code', authenticateToken, requireAdmin, async (req, res) => {
   try {
     await loadSchema();
     if (!accessSupported) {
@@ -349,7 +338,12 @@ router.post('/:id/pdf/access-code/regenerate', authenticateToken, requireAdmin, 
     }
     const exists = await pool.query('SELECT id FROM research WHERE id = $1', [req.params.id]);
     if (!exists.rows[0]) return res.status(404).json({ error: 'Not found', code: 'NOT_FOUND' });
-    const code = await createUniqueAccessCode(pool);
+    const supplied = req.body && req.body.code;
+    if (!isValidUserAccessCode(supplied)) {
+      return res.status(400).json({ error: accessCodeValidationMessage(), code: 'INVALID_ACCESS_CODE' });
+    }
+    const code = normalizeAccessCode(supplied);
+    await assertAccessCodeAvailable(pool, code, req.params.id);
     const { rows } = await pool.query(
       `UPDATE research
        SET pdf_access_code = $1, pdf_access_code_updated_at = now()
@@ -357,9 +351,9 @@ router.post('/:id/pdf/access-code/regenerate', authenticateToken, requireAdmin, 
        RETURNING pdf_access_code AS code, pdf_access_code_updated_at AS updated_at`,
       [code, req.params.id]
     );
-    res.json({ code: formatAccessCode(rows[0].code), updated_at: rows[0].updated_at });
+    res.json({ code: rows[0].code, updated_at: rows[0].updated_at });
   } catch (err) {
-    sendResearchError(res, err, 'PDF access code regeneration', { expose: req.user.role === 'admin' });
+    sendResearchError(res, err, 'PDF access code update', { expose: req.user.role === 'admin' });
   }
 });
 
@@ -391,9 +385,16 @@ router.get('/:id', async (req, res) => {
 });
 
 router.post('/', authenticateToken, async (req, res) => {
-  const { title, authors, author_ids, adviser, program_id, year, abstract, keywords } = req.body;
+  const { title, authors, author_ids, adviser, program_id, year, abstract, keywords, pdf_access_code } = req.body;
   if (!title || (!authors && !author_ids) || !year) return res.status(400).json({ error: 'Required fields missing' });
   await loadSchema();
+  let requestedAccessCode = null;
+  if (accessSupported && pdf_access_code != null && String(pdf_access_code).trim() !== '') {
+    if (!isValidUserAccessCode(pdf_access_code)) {
+      return res.status(400).json({ error: accessCodeValidationMessage(), code: 'INVALID_ACCESS_CODE' });
+    }
+    requestedAccessCode = normalizeAccessCode(pdf_access_code);
+  }
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -406,16 +407,16 @@ router.post('/', authenticateToken, async (req, res) => {
       [codeYear]
     );
     const code = `RS-${codeYear}-${String(sequence.rows[0].max_seq + 1).padStart(4, '0')}`;
-    const accessCode = accessSupported ? await createUniqueAccessCode(client) : null;
+    if (requestedAccessCode) await assertAccessCodeAvailable(client, requestedAccessCode);
     const insertSql = accessSupported
       ? `INSERT INTO research (code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status, pdf_access_code, pdf_access_code_updated_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,now())
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, CASE WHEN $11::text IS NULL THEN NULL ELSE now() END)
          RETURNING id::int AS id, code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status, created_at`
       : `INSERT INTO research (code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
          RETURNING id::int AS id, code, title, authors, adviser, program_id, year, abstract, keywords, submitted_by, status, created_at`;
     const insertValues = [code, title, authors, adviser || null, program_id ? parseInt(program_id) : null, parseInt(year), abstract || '', keywords || '', req.user.id, req.user.role === 'admin' ? 'approved' : 'pending'];
-    if (accessSupported) insertValues.push(accessCode);
+    if (accessSupported) insertValues.push(requestedAccessCode);
     const { rows } = await client.query(insertSql, insertValues);
     const research = rows[0];
     
@@ -456,6 +457,8 @@ router.post('/', authenticateToken, async (req, res) => {
     res.json(finalRows[0]);
   } catch (err) {
     await client.query('ROLLBACK');
+    if (err && Number.isInteger(err.status)) return res.status(err.status).json({ error: err.message, code: err.code });
+    if (err && err.code === '23505') return res.status(409).json({ error: 'That access code is already in use.', code: 'ACCESS_CODE_TAKEN' });
     console.error('[api/research] request failed:', err && err.message ? err.message : err);
     res.status(500).json({ error: 'Server error' });
   } finally {
@@ -464,7 +467,7 @@ router.post('/', authenticateToken, async (req, res) => {
 });
 
 router.put('/:id', authenticateToken, async (req, res) => {
-  const { title, authors, author_ids, adviser, program_id, year, abstract, keywords } = req.body;
+  const { title, authors, author_ids, adviser, program_id, year, abstract, keywords, pdf_access_code } = req.body;
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
@@ -472,6 +475,15 @@ router.put('/:id', authenticateToken, async (req, res) => {
     if (!existing.rows[0]) return res.status(404).json({ error: 'Not found' });
     const cur = existing.rows[0];
     if (req.user.role !== 'admin' && String(cur.submitted_by) !== String(req.user.id)) return res.status(403).json({ error: 'Not authorized' });
+
+    let requestedAccessCode = null;
+    if (accessSupported && req.user.role === 'admin' && pdf_access_code != null && String(pdf_access_code).trim() !== '') {
+      if (!isValidUserAccessCode(pdf_access_code)) {
+        await client.query('ROLLBACK');
+        return res.status(400).json({ error: accessCodeValidationMessage(), code: 'INVALID_ACCESS_CODE' });
+      }
+      requestedAccessCode = normalizeAccessCode(pdf_access_code);
+    }
 
     const { rows } = await client.query(
       `UPDATE research SET title=$1, authors=$2, adviser=$3, program_id=$4, year=$5, abstract=$6, keywords=$7
@@ -513,6 +525,14 @@ router.put('/:id', authenticateToken, async (req, res) => {
       }
     }
 
+    if (requestedAccessCode && requestedAccessCode !== cur.pdf_access_code) {
+      await assertAccessCodeAvailable(client, requestedAccessCode, req.params.id);
+      await client.query(
+        `UPDATE research SET pdf_access_code = $1, pdf_access_code_updated_at = now() WHERE id = $2`,
+        [requestedAccessCode, req.params.id]
+      );
+    }
+
     await client.query('COMMIT');
     
     // Return with author details
@@ -521,6 +541,8 @@ router.put('/:id', authenticateToken, async (req, res) => {
     res.json(finalRows[0]);
   } catch (err) {
     await client.query('ROLLBACK');
+    if (err && Number.isInteger(err.status)) return res.status(err.status).json({ error: err.message, code: err.code });
+    if (err && err.code === '23505') return res.status(409).json({ error: 'That access code is already in use.', code: 'ACCESS_CODE_TAKEN' });
     console.error('[api/research] request failed:', err && err.message ? err.message : err);
     res.status(500).json({ error: 'Server error' });
   } finally {

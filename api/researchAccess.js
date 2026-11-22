@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const ACCESS_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACCESS_CODE_LENGTH = 8;
 const ACCESS_CODE_GROUP_SIZE = 4;
+const USER_ACCESS_CODE_MIN_LENGTH = 4;
+const USER_ACCESS_CODE_MAX_LENGTH = 32;
 
 function normalizeAccessCode(value) {
   return String(value || '')
@@ -20,6 +22,12 @@ function isValidAccessCodeFormat(value) {
   const normalized = normalizeAccessCode(value);
   return normalized.length === ACCESS_CODE_LENGTH
     && [...normalized].every((character) => ACCESS_CODE_ALPHABET.includes(character));
+}
+
+function isValidUserAccessCode(value) {
+  const normalized = normalizeAccessCode(value);
+  return normalized.length >= USER_ACCESS_CODE_MIN_LENGTH
+    && normalized.length <= USER_ACCESS_CODE_MAX_LENGTH;
 }
 
 function generateAccessCode() {
@@ -63,9 +71,12 @@ module.exports = {
   ACCESS_CODE_ALPHABET,
   ACCESS_CODE_LENGTH,
   ACCESS_CODE_GROUP_SIZE,
+  USER_ACCESS_CODE_MIN_LENGTH,
+  USER_ACCESS_CODE_MAX_LENGTH,
   normalizeAccessCode,
   formatAccessCode,
   isValidAccessCodeFormat,
+  isValidUserAccessCode,
   generateAccessCode,
   accessCodesMatch,
   getClientIp,
