@@ -289,9 +289,9 @@ export default function AdminReports() {
         </div>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      <div className="space-y-5">
         {/* Top Viewed Research */}
-        <Card className="min-w-0 lg:col-span-2">
+        <Card className="min-w-0">
           <div className="admin-panel-head">
             <h2 className="admin-panel-title"><Eye className="h-4 w-4 text-emerald-brand" /> Most Viewed Research</h2>
           </div>
@@ -323,102 +323,110 @@ export default function AdminReports() {
           </div>
         </Card>
 
-        {/* Research by Program */}
+        {/* Distribution Overview */}
         <Card className="min-w-0">
           <div className="admin-panel-head">
-            <h2 className="admin-panel-title"><FolderTree className="h-4 w-4 text-emerald-brand" /> Research by Program</h2>
+            <h2 className="admin-panel-title"><LayoutDashboard className="h-4 w-4 text-emerald-brand" /> Distribution Overview</h2>
           </div>
-          <div className="admin-panel-body space-y-2">
-            {byProgram.length === 0 ? (
-              <p className="text-[13.5px] text-muted-green py-8 text-center">No program data yet</p>
-            ) : (
-              <div className="space-y-2">
-                {byProgram.map((item, i) => (
-                  <div key={item.program} className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40">
-                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] text-[#0C765E]">
-                      <FolderTree className="h-3.5 w-3.5" />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13px] font-semibold text-forest">{item.program || 'Unassigned'}</div>
-                      <div className="text-[11px] text-[#607B72]">{pct(item.count, programTotal)}% of works</div>
-                    </div>
-                    <div className="flex w-24 shrink-0 items-center gap-2 sm:w-36">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
-                        <div
-                          className="h-full rounded-full bg-[#08755B]"
-                          style={{ width: `${(item.count / maxProg) * 100}%` }}
-                        />
+          <div className="admin-panel-body">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+              {[
+                { key: 'approved', label: 'Approved', value: stats?.approved ?? 0, color: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-600', icon: CheckCircle2 },
+                { key: 'pending', label: 'Pending', value: stats?.pending ?? 0, color: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', icon: Clock },
+                { key: 'rejected', label: 'Rejected', value: stats?.rejected ?? 0, color: 'bg-red-100 text-red-700', bar: 'bg-red-500', icon: XCircle },
+              ].map(item => {
+                const total = (stats?.approved ?? 0) + (stats?.pending ?? 0) + (stats?.rejected ?? 0);
+                return (
+                  <Link
+                    key={item.label}
+                    to={`/admin/browse?status=${item.key}`}
+                    className="rounded-2xl border border-[#E6EDE9] bg-white p-4 transition hover:border-[#CFE2DA] hover:bg-emerald-50/30"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2.5">
+                        <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.color}`}>
+                          <item.icon className="h-4 w-4" />
+                        </span>
+                        <div className="min-w-0">
+                          <div className="text-[13px] font-semibold text-forest">{item.label}</div>
+                          <div className="text-[11px] text-[#607B72]">{total ? `${pct(item.value, total)}% of total` : '0%'}</div>
+                        </div>
                       </div>
-                      <span className="w-8 shrink-0 text-right font-mono text-[11px] font-semibold text-[#0C765E]">{item.count}</span>
+                      <span className="shrink-0 font-mono text-[16px] font-semibold text-forest">{item.value}</span>
                     </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </Card>
+                    <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#E6EDE9]">
+                      <div className={`h-full rounded-full ${item.bar}`} style={{ width: total ? `${(item.value / total) * 100}%` : '0%' }} />
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
 
-        {/* Research by Year */}
-        <Card className="min-w-0">
-          <div className="admin-panel-head">
-            <h2 className="admin-panel-title"><Calendar className="h-4 w-4 text-emerald-brand" /> Research by Year</h2>
-          </div>
-          <div className="admin-panel-body space-y-2">
-            {byYear.length === 0 ? (
-              <p className="text-[13.5px] text-muted-green py-8 text-center">No year data yet</p>
-            ) : (
-              <div className="space-y-2">
-                {byYear.map(item => (
-                  <div key={item.year} className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40">
-                    <span className="flex h-6 w-10 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] font-mono text-[10.5px] font-bold text-[#0C765E]">{item.year}</span>
-                    <div className="flex min-w-0 flex-1 items-center gap-2">
-                      <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
-                        <div className="h-full rounded-full bg-emerald-brand" style={{ width: `${(item.count / maxYearCount) * 100}%` }} />
-                      </div>
-                      <span className="w-8 shrink-0 text-right font-mono text-[11px] font-semibold text-[#0C765E]">{item.count}</span>
-                    </div>
+            <div className="mt-5 grid grid-cols-1 gap-6 border-t border-[#E9F0EC] pt-5 lg:grid-cols-2">
+              <section className="min-w-0">
+                <h3 className="mb-3 flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#607B72]">
+                  <FolderTree className="h-3.5 w-3.5 text-emerald-brand" /> Research by Program
+                </h3>
+                {byProgram.length === 0 ? (
+                  <p className="text-[13.5px] text-muted-green py-6 text-center">No program data yet</p>
+                ) : (
+                  <div className="space-y-2">
+                    {byProgram.map(item => (
+                      <Link
+                        key={item.program}
+                        to={item.program_code ? `/admin/browse?program=${encodeURIComponent(item.program_code)}` : '/admin/browse'}
+                        className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40"
+                      >
+                        <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] text-[#0C765E]">
+                          <FolderTree className="h-3.5 w-3.5" />
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <div className="truncate text-[13px] font-semibold text-forest">{item.program || 'Unassigned'}</div>
+                          <div className="text-[11px] text-[#607B72]">{pct(item.count, programTotal)}% of works</div>
+                        </div>
+                        <div className="flex w-24 shrink-0 items-center gap-2 sm:w-36">
+                          <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
+                            <div
+                              className="h-full rounded-full bg-[#08755B]"
+                              style={{ width: `${(item.count / maxProg) * 100}%` }}
+                            />
+                          </div>
+                          <span className="w-8 shrink-0 text-right font-mono text-[11px] font-semibold text-[#0C765E]">{item.count}</span>
+                        </div>
+                      </Link>
+                    ))}
                   </div>
-                ))}
-              </div>
-            )}
+                )}
+              </section>
+
+              <section className="min-w-0 lg:border-l lg:border-[#E9F0EC] lg:pl-6">
+                <h3 className="mb-3 flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#607B72]">
+                  <Calendar className="h-3.5 w-3.5 text-emerald-brand" /> Research by Year
+                </h3>
+                {byYear.length === 0 ? (
+                  <p className="text-[13.5px] text-muted-green py-6 text-center">No year data yet</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                    {byYear.map(item => (
+                      <Link
+                        key={item.year}
+                        to={`/admin/browse?year=${item.year}`}
+                        className="flex items-center gap-2 rounded-lg border border-[#E6EDE9] bg-white px-2.5 py-2 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40"
+                      >
+                        <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] font-mono text-[10px] font-bold text-[#0C765E]">{item.year}</span>
+                        <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
+                          <div className="h-full rounded-full bg-emerald-brand" style={{ width: `${(item.count / maxYearCount) * 100}%` }} />
+                        </div>
+                        <span className="w-7 shrink-0 text-right font-mono text-[10.5px] font-semibold text-[#0C765E]">{item.count}</span>
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </section>
+            </div>
           </div>
         </Card>
       </div>
-
-      {/* Status Breakdown */}
-      <Card>
-        <div className="admin-panel-head">
-          <h2 className="admin-panel-title"><LayoutDashboard className="h-4 w-4 text-emerald-brand" /> Status Breakdown</h2>
-        </div>
-        <div className="admin-panel-body grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { label: 'Approved', value: stats?.approved ?? 0, color: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-600', icon: CheckCircle2 },
-            { label: 'Pending', value: stats?.pending ?? 0, color: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', icon: Clock },
-            { label: 'Rejected', value: stats?.rejected ?? 0, color: 'bg-red-100 text-red-700', bar: 'bg-red-500', icon: XCircle },
-          ].map(item => {
-            const total = (stats?.approved ?? 0) + (stats?.pending ?? 0) + (stats?.rejected ?? 0);
-            return (
-              <div key={item.label} className="rounded-2xl border border-[#E6EDE9] bg-white p-4 transition hover:border-[#CFE2DA]">
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <span className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full ${item.color}`}>
-                      <item.icon className="h-4 w-4" />
-                    </span>
-                    <div className="min-w-0">
-                      <div className="text-[13px] font-semibold text-forest">{item.label}</div>
-                      <div className="text-[11px] text-[#607B72]">{total ? `${pct(item.value, total)}% of total` : '0%'}</div>
-                    </div>
-                  </div>
-                  <span className="shrink-0 font-mono text-[16px] font-semibold text-forest">{item.value}</span>
-                </div>
-                <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#E6EDE9]">
-                  <div className={`h-full rounded-full ${item.bar}`} style={{ width: total ? `${(item.value / total) * 100}%` : '0%' }} />
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </Card>
     </div>
   );
 }
