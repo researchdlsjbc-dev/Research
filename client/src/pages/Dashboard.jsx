@@ -33,6 +33,8 @@ export default function Dashboard() {
     { label: 'Programs', value: stats.programs, icon: FolderTree, chip: 'bg-mint-dark text-deep-green' },
   ];
 
+  const maxYearCount = Math.max(1, ...(stats.byYear || []).map(y => y.count));
+
   return (
     <div>
       <section className="dashboard-hero -mx-4 -mt-6 md:-mx-8 md:-mt-9">
@@ -84,7 +86,8 @@ export default function Dashboard() {
                 <p className="text-[13.5px]">No submissions yet</p>
               </div>
             ) : (
-              <Table className="admin-table">
+              <div className="table-scroll">
+              <Table className="admin-table min-w-[480px]">
                 <TableHeader>
                   <TableRow className="border-0 hover:bg-transparent">
                     <TableHead>Code</TableHead><TableHead>Title</TableHead><TableHead>Status</TableHead>
@@ -102,21 +105,32 @@ export default function Dashboard() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             )}
           </div>
 
           <div className="admin-panel">
             <div className="admin-panel-head">
               <h2 className="admin-panel-title"><BarChart3 className="h-4 w-4 text-emerald-brand" /> By Year</h2>
+              <Link to="/admin/reports" className="text-[13px] font-semibold text-[#0C765E] transition hover:text-forest">
+                All years
+              </Link>
             </div>
             <div className="admin-panel-body">
               {(!stats.byYear || stats.byYear.length === 0) && <p className="text-[13.5px] text-muted-green">No data yet</p>}
-              <div className="space-y-1">
+              <div className="space-y-2">
                 {(stats.byYear || []).slice(0, 6).map(y => (
-                  <div key={y.year} className="flex items-center justify-between rounded-lg px-2 py-2 transition hover:bg-pale-green">
-                    <span className="font-mono text-[13px] font-semibold text-forest">{y.year}</span>
-                    <Badge variant="secondary" className="bg-soft-green text-[#0C765E] hover:bg-mint-dark">{y.count}</Badge>
-                  </div>
+                  <Link
+                    key={y.year}
+                    to={`/admin/browse?year=${y.year}`}
+                    className="flex items-center gap-2.5 rounded-lg px-2 py-1.5 transition hover:bg-soft-green"
+                  >
+                    <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-soft-green font-mono text-[10px] font-bold text-[#0C765E]">{y.year}</span>
+                    <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">
+                      <div className="h-full rounded-full bg-emerald-brand" style={{ width: `${(y.count / maxYearCount) * 100}%` }} />
+                    </div>
+                    <span className="w-7 shrink-0 text-right font-mono text-[10.5px] font-semibold text-[#0C765E]">{y.count}</span>
+                  </Link>
                 ))}
               </div>
             </div>

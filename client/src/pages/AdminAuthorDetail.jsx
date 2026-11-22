@@ -2,9 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import axios from 'axios';
 import { API } from '../context/AuthContext';
-import { ArrowLeft, Mail, Building2, Award, BookOpen, Calendar, Users, TrendingUp, Edit, MoreHorizontal, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ArrowLeft, Mail, Building2, Award, BookOpen, Calendar, Users, TrendingUp, Edit, MoreHorizontal, CheckCircle2, Clock, FolderTree, XCircle } from 'lucide-react';
 import { Button } from '../components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui/tabs';
@@ -47,48 +46,64 @@ export default function AdminAuthorDetail() {
       <div className="flex items-center gap-4">
         <Link to="/admin/authors"><Button variant="ghost" size="sm"><ArrowLeft className="h-4 w-4" /> Back</Button></Link>
         <div className="flex-1">
-          <h1 className="admin-title">{author.name}</h1>
-          <p className="admin-subtitle">Author Profile & Publications</p>
+          <span className="admin-eyebrow"><Users className="h-3 w-3" /> Author Profile</span>
+          <h1 className="admin-title mt-3">{author.name}</h1>
+          <p className="admin-subtitle">Author profile &amp; publications</p>
         </div>
-        <Link to={`/admin/authors/${id}/edit`}><Button variant="outline"><Edit className="h-4 w-4" /> Edit</Button></Link>
+        <Link to={`/admin/authors/${id}/edit`}><Button variant="outline" className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green transition hover:bg-soft-green hover:text-forest"><Edit className="h-4 w-4" /> Edit</Button></Link>
       </div>
 
       <div className="grid gap-4 lg:grid-cols-4">
-        <Card className="lg:col-span-1">
-          <CardContent className="pt-6">
-            <div className="flex flex-col items-center text-center">
-              <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-brand text-white text-3xl font-bold">
-                {author.name.charAt(0).toUpperCase()}
-              </div>
-              <h3 className="mt-4 text-lg font-semibold text-forest">{author.name}</h3>
-              {author.affiliation && <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green"><Building2 className="h-3.5 w-3.5" /> {author.affiliation}</p>}
-              {author.email && <a href={`mailto:${author.email}`} className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green hover:text-forest"><Mail className="h-3.5 w-3.5" /> {author.email}</a>}
-              {author.orcid && <a href={`https://orcid.org/${author.orcid}`} target="_blank" rel="noopener" className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green hover:text-forest"><Award className="h-3.5 w-3.5" /> ORCID: {author.orcid}</a>}
+        <div className="admin-panel lg:col-span-1">
+          <div className="admin-panel-body flex flex-col items-center text-center">
+            <div className="flex h-24 w-24 items-center justify-center rounded-full bg-emerald-brand text-3xl font-bold text-white">
+              {author.name.charAt(0).toUpperCase()}
             </div>
-          </CardContent>
-        </Card>
-        <div className="lg:col-span-3 space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <Card><CardContent className="py-4"><div className="text-2xl font-bold text-forest">{stats?.total_publications || 0}</div><div className="text-[12px] text-muted-green">Total Publications</div></CardContent></Card>
-            <Card><CardContent className="py-4"><div className="text-2xl font-bold text-emerald-600">{stats?.approved || 0}</div><div className="text-[12px] text-muted-green">Approved</div></CardContent></Card>
-            <Card><CardContent className="py-4"><div className="text-2xl font-bold text-amber-600">{stats?.pending || 0}</div><div className="text-[12px] text-muted-green">Pending</div></CardContent></Card>
-            <Card><CardContent className="py-4"><div className="text-2xl font-bold text-[#0C765E]">{stats?.programs_count || 0}</div><div className="text-[12px] text-muted-green">Programs</div></CardContent></Card>
+            <h3 className="mt-4 text-lg font-semibold text-forest">{author.name}</h3>
+            {author.affiliation && <p className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green"><Building2 className="h-3.5 w-3.5" /> {author.affiliation}</p>}
+            {author.email && <a href={`mailto:${author.email}`} className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green hover:text-forest"><Mail className="h-3.5 w-3.5" /> {author.email}</a>}
+            {author.orcid && <a href={`https://orcid.org/${author.orcid}`} target="_blank" rel="noopener" className="mt-1 flex items-center gap-1.5 text-[13px] text-muted-green hover:text-forest"><Award className="h-3.5 w-3.5" /> ORCID: {author.orcid}</a>}
+          </div>
+        </div>
+        <div className="lg:col-span-3 space-y-5">
+          <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="admin-stat">
+              <span className="admin-stat-chip bg-soft-green text-emerald-brand"><BookOpen className="h-4 w-4" /></span>
+              <div className="min-w-0"><p className="admin-stat-value">{stats?.total_publications || 0}</p><p className="admin-stat-label">Total Publications</p></div>
+            </div>
+            <div className="admin-stat">
+              <span className="admin-stat-chip bg-soft-green text-emerald-brand"><CheckCircle2 className="h-4 w-4" /></span>
+              <div className="min-w-0"><p className="admin-stat-value">{stats?.approved || 0}</p><p className="admin-stat-label">Approved</p></div>
+            </div>
+            <div className="admin-stat">
+              <span className="admin-stat-chip bg-amber-50 text-amber-700"><Clock className="h-4 w-4" /></span>
+              <div className="min-w-0"><p className="admin-stat-value">{stats?.pending || 0}</p><p className="admin-stat-label">Pending</p></div>
+            </div>
+            <div className="admin-stat">
+              <span className="admin-stat-chip bg-soft-green text-emerald-brand"><FolderTree className="h-4 w-4" /></span>
+              <div className="min-w-0"><p className="admin-stat-value">{stats?.programs_count || 0}</p><p className="admin-stat-label">Programs</p></div>
+            </div>
           </div>
 
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <TabsList className="flex flex-wrap gap-1.5 rounded-full border border-[#E6EDE9] bg-white p-1.5">
-              <TabsTrigger value="publications" className="px-4 py-1.5 text-[13px] font-semibold text-muted-green">Publications ({research.length})</TabsTrigger>
-              <TabsTrigger value="stats" className="px-4 py-1.5 text-[13px] font-semibold text-muted-green">Statistics</TabsTrigger>
+              <TabsTrigger value="publications" className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-muted-green transition data-[state=active]:bg-emerald-brand data-[state=active]:text-white">Publications ({research.length})</TabsTrigger>
+              <TabsTrigger value="stats" className="rounded-full px-4 py-1.5 text-[13px] font-semibold text-muted-green transition data-[state=active]:bg-emerald-brand data-[state=active]:text-white">Statistics</TabsTrigger>
             </TabsList>
 
             <TabsContent value="publications" className="admin-panel mt-5">
+              <div className="admin-panel-head">
+                <h2 className="admin-panel-title"><BookOpen className="h-4 w-4 text-emerald-brand" /> Publications</h2>
+                <span className="text-[13px] font-semibold text-muted-green">{research.length} {research.length === 1 ? 'work' : 'works'}</span>
+              </div>
               {research.length === 0 ? (
                 <div className="py-14 text-center">
                   <BookOpen className="mx-auto mb-4 h-12 w-12 text-[#8AA79E]" />
                   <h3 className="section-title text-[22px]">No publications yet</h3>
                 </div>
               ) : (
-                <Table className="admin-table">
+                <div className="table-scroll">
+                <Table className="admin-table min-w-[680px]">
                   <TableHeader><TableRow className="border-0"><TableHead>Title</TableHead><TableHead>Program</TableHead><TableHead>Year</TableHead><TableHead>Status</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
                   <TableBody>
                     {research.map(r => (
@@ -102,38 +117,55 @@ export default function AdminAuthorDetail() {
                     ))}
                   </TableBody>
                 </Table>
+                </div>
               )}
             </TabsContent>
 
-            <TabsContent value="stats" className="admin-panel mt-5 space-y-6">
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <Card><CardContent className="py-4"><div className="text-2xl font-bold text-forest">{stats?.years_active || 0}</div><div className="text-[12px] text-muted-green">Years Active</div></CardContent></Card>
-                <Card><CardContent className="py-4"><div className="text-2xl font-bold text-forest">{stats?.first_year || '—'}</div><div className="text-[12px] text-muted-green">First Publication</div></CardContent></Card>
-                <Card><CardContent className="py-4"><div className="text-2xl font-bold text-forest">{stats?.latest_year || '—'}</div><div className="text-[12px] text-muted-green">Latest Publication</div></CardContent></Card>
-                <Card><CardContent className="py-4"><div className="text-2xl font-bold text-forest">{stats?.rejected || 0}</div><div className="text-[12px] text-muted-green">Rejected</div></CardContent></Card>
+            <TabsContent value="stats" className="mt-5 space-y-5">
+              <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+                <div className="admin-stat">
+                  <span className="admin-stat-chip bg-soft-green text-emerald-brand"><Calendar className="h-4 w-4" /></span>
+                  <div className="min-w-0"><p className="admin-stat-value">{stats?.years_active || 0}</p><p className="admin-stat-label">Years Active</p></div>
+                </div>
+                <div className="admin-stat">
+                  <span className="admin-stat-chip bg-soft-green text-emerald-brand"><TrendingUp className="h-4 w-4" /></span>
+                  <div className="min-w-0"><p className="admin-stat-value">{stats?.first_year || '—'}</p><p className="admin-stat-label">First Publication</p></div>
+                </div>
+                <div className="admin-stat">
+                  <span className="admin-stat-chip bg-soft-green text-emerald-brand"><Award className="h-4 w-4" /></span>
+                  <div className="min-w-0"><p className="admin-stat-value">{stats?.latest_year || '—'}</p><p className="admin-stat-label">Latest Publication</p></div>
+                </div>
+                <div className="admin-stat">
+                  <span className="admin-stat-chip bg-red-50 text-red-600"><XCircle className="h-4 w-4" /></span>
+                  <div className="min-w-0"><p className="admin-stat-value">{stats?.rejected || 0}</p><p className="admin-stat-label">Rejected</p></div>
+                </div>
               </div>
 
-              {(stats?.by_year?.length || stats?.by_program?.length) && (
-                <div className="grid gap-6 lg:grid-cols-2">
+              {Boolean(stats?.by_year?.length || stats?.by_program?.length) && (
+                <div className="grid gap-5 lg:grid-cols-2">
                   {stats.by_year?.length > 0 && (
-                    <Card>
-                      <CardHeader><CardTitle className="text-lg">Publications by Year</CardTitle></CardHeader>
-                      <CardContent>
+                    <div className="admin-panel">
+                      <div className="admin-panel-head">
+                        <h2 className="admin-panel-title"><Calendar className="h-4 w-4 text-emerald-brand" /> Publications by Year</h2>
+                      </div>
+                      <div className="table-scroll">
                         <Table className="admin-table"><TableHeader><TableRow><TableHead>Year</TableHead><TableHead className="text-right">Count</TableHead></TableRow></TableHeader>
                         <TableBody>{stats.by_year.map(y => (<TableRow key={y.year}><TableCell className="font-mono">{y.year}</TableCell><TableCell className="text-right font-semibold text-[#0C765E]">{y.count}</TableCell></TableRow>))}</TableBody>
                         </Table>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   )}
                   {stats.by_program?.length > 0 && (
-                    <Card>
-                      <CardHeader><CardTitle className="text-lg">Publications by Program</CardTitle></CardHeader>
-                      <CardContent>
+                    <div className="admin-panel">
+                      <div className="admin-panel-head">
+                        <h2 className="admin-panel-title"><FolderTree className="h-4 w-4 text-emerald-brand" /> Publications by Program</h2>
+                      </div>
+                      <div className="table-scroll">
                         <Table className="admin-table"><TableHeader><TableRow><TableHead>Program</TableHead><TableHead className="text-right">Count</TableHead></TableRow></TableHeader>
                         <TableBody>{stats.by_program.map(p => (<TableRow key={p.code}><TableCell>{p.name}</TableCell><TableCell className="text-right font-semibold text-[#0C765E]">{p.count}</TableCell></TableRow>))}</TableBody>
                         </Table>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}

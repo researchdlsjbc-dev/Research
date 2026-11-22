@@ -101,7 +101,8 @@ export default function AdminResearch() {
             <Button className="gradient-btn rounded-full" onClick={fetchData}>Search</Button>
           </div>
 
-          <Table className="admin-table">
+          <div className="table-scroll">
+          <Table className="admin-table min-w-[960px]">
             <TableHeader>
               <TableRow className="border-0 hover:bg-transparent">
                 <TableHead>Code</TableHead><TableHead>Title</TableHead><TableHead>Authors</TableHead><TableHead>Year</TableHead><TableHead className="text-center">Views</TableHead><TableHead>Status</TableHead><TableHead className="text-center">Featured</TableHead><TableHead className="text-right">Actions</TableHead>
@@ -144,6 +145,7 @@ export default function AdminResearch() {
               {research.length === 0 && <TableRow className="border-0"><TableCell colSpan={8} className="py-14 text-center text-[13.5px] text-muted-green">No research found</TableCell></TableRow>}
             </TableBody>
           </Table>
+          </div>
         </div>
       </Tabs>
     </div>

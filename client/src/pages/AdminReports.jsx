@@ -251,7 +251,7 @@ export default function AdminReports() {
                 )}
               </div>
             ) : (
-              <table className="admin-table w-full">
+              <table className="admin-table w-full min-w-[760px]">
                 <thead>
                   <tr>
                     <th>Program</th>

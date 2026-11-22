@@ -66,7 +66,8 @@ export default function AdminUsers() {
           <h2 className="admin-panel-title"><Users className="h-4 w-4 text-emerald-brand" /> All Users</h2>
           <span className="text-[13px] font-semibold text-muted-green">{users.length} {users.length === 1 ? 'account' : 'accounts'}</span>
         </div>
-        <Table className="admin-table">
+        <div className="table-scroll">
+        <Table className="admin-table min-w-[720px]">
           <TableHeader>
             <TableRow className="border-0 hover:bg-transparent">
               <TableHead>ID</TableHead><TableHead>Username</TableHead><TableHead>Full Name</TableHead><TableHead>Role</TableHead><TableHead>Created</TableHead><TableHead className="text-right">Actions</TableHead>
@@ -95,6 +96,7 @@ export default function AdminUsers() {
             {users.length === 0 && <TableRow className="border-0"><TableCell colSpan={6} className="py-14 text-center text-[13.5px] text-muted-green">No users found</TableCell></TableRow>}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>

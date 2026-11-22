@@ -57,7 +57,8 @@ export default function AdminPrograms() {
           <h2 className="admin-panel-title"><FolderTree className="h-4 w-4 text-emerald-brand" /> Academic Programs</h2>
           <span className="text-[13px] font-semibold text-muted-green">{programs.length} {programs.length === 1 ? 'program' : 'programs'}</span>
         </div>
-        <Table className="admin-table">
+        <div className="table-scroll">
+        <Table className="admin-table min-w-[560px]">
           <TableHeader>
             <TableRow className="border-0 hover:bg-transparent">
               <TableHead>ID</TableHead><TableHead>Code</TableHead><TableHead>Name</TableHead><TableHead className="text-right">Actions</TableHead>
@@ -80,6 +81,7 @@ export default function AdminPrograms() {
             {programs.length === 0 && <TableRow className="border-0"><TableCell colSpan={4} className="py-14 text-center text-[13.5px] text-muted-green">No programs found</TableCell></TableRow>}
           </TableBody>
         </Table>
+        </div>
       </div>
 
       <Dialog open={showModal} onOpenChange={setShowModal}>

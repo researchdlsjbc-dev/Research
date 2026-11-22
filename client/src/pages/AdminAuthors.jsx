@@ -122,7 +122,7 @@ export default function AdminAuthors() {
                 <p className="mx-auto mt-1.5 max-w-sm text-[14.5px] text-muted-green">Add your first author or adjust search filters.</p>
               </div>
             ) : (
-              <table className="research-table">
+              <table className="research-table min-w-[680px]">
                 <thead>
                   <tr>
                     <th>Author</th>

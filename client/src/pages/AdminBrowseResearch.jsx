@@ -208,14 +208,14 @@ function AdminBrowseResearchContent() {
         <div className="admin-stat">
           <div className="admin-stat-chip bg-amber-100 text-amber-700"><Clock className="h-5 w-5" /></div>
           <div>
-            <div className="admin-stat-value">{research.filter(r => r.status === 'pending').length}</div>
+            <div className="admin-stat-value">{stats?.pending ?? 0}</div>
             <div className="admin-stat-label">Pending Review</div>
           </div>
         </div>
         <div className="admin-stat">
           <div className="admin-stat-chip bg-emerald-100 text-emerald-700"><CheckCircle2 className="h-5 w-5" /></div>
           <div>
-            <div className="admin-stat-value">{research.filter(r => r.status === 'approved').length}</div>
+            <div className="admin-stat-value">{stats?.approved ?? 0}</div>
             <div className="admin-stat-label">Approved</div>
           </div>
         </div>
@@ -400,7 +400,7 @@ function AdminBrowseResearchContent() {
               )}
             </div>
           ) : (
-            <table className="research-table">
+            <table className="research-table table-auto min-w-[980px]">
               <thead>
                 <tr>
                   <th style={{ width: 52 }}><span className="sr-only">Cover</span></th>
