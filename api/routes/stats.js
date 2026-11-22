@@ -9,10 +9,14 @@ router.get('/', async (req, res) => {
     const r2 = await pool.query('SELECT COUNT(*)::int AS users FROM users');
     const r3 = await pool.query('SELECT COUNT(*)::int AS programs FROM programs');
     const r6 = await pool.query('SELECT year, COUNT(*)::int AS count FROM research GROUP BY year ORDER BY year DESC LIMIT 10');
+    const r7 = await pool.query('SELECT r.code, r.title, COALESCE(r.view_count, 0)::int AS views FROM research r ORDER BY COALESCE(r.view_count, 0) DESC LIMIT 10');
+    const r8 = await pool.query('SELECT p.name AS program, COUNT(r.id)::int AS count FROM programs p LEFT JOIN research r ON r.program_id = p.id GROUP BY p.id, p.name ORDER BY count DESC');
     res.json({
       total: r1.rows[0].total, approved: r1.rows[0].approved, pending: r1.rows[0].pending, rejected: r1.rows[0].rejected, total_views: r1.rows[0].total_views,
       users: r2.rows[0].users, programs: r3.rows[0].programs,
-      byYear: r6.rows.map(r => ({ year: r.year, count: r.count }))
+      byYear: r6.rows.map(r => ({ year: r.year, count: r.count })),
+      topViews: r7.rows.map(r => ({ code: r.code, title: r.title, views: r.views })),
+      byProgram: r8.rows.map(r => ({ program: r.program, count: r.count }))
     });
   } catch (err) {
     console.error('[api/stats] request failed:', err && err.message ? err.message : err);

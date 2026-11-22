@@ -19,6 +19,7 @@ import AdminPrograms from './pages/AdminPrograms';
 import AdminAuthors from './pages/AdminAuthors';
 import AdminAuthorDetail from './pages/AdminAuthorDetail';
 import AdminAuthorForm from './pages/AdminAuthorForm';
+import AdminReports from './pages/AdminReports';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Footer from './components/Footer';
@@ -107,6 +108,7 @@ function AppRoutes() {
       <Route path="/admin/research/:id" element={<AdminRoute><AdminLayout><ResearchDetail /></AdminLayout></AdminRoute>} />
       <Route path="/admin/browse" element={<AdminRoute><AdminLayout><AdminBrowseResearch /></AdminLayout></AdminRoute>} />
       <Route path="/admin/programs" element={<AdminRoute><AdminLayout><AdminPrograms /></AdminLayout></AdminRoute>} />
+      <Route path="/admin/reports" element={<AdminRoute><AdminLayout><AdminReports /></AdminLayout></AdminRoute>} />
     </Routes>
   );
 }
