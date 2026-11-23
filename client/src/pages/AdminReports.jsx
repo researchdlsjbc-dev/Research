@@ -143,20 +143,17 @@ export default function AdminReports() {
   const maxYearCount = Math.max(1, ...byYear.map(y => y.count));
 
   return (
-    <div className="admin-page space-y-6">
-      <div className="flex flex-wrap items-end justify-between gap-3">
+    <div className="admin-page report-doc space-y-6">
+      <div className="flex flex-wrap items-end justify-between gap-3 print:hidden">
         <div>
-          <span className="admin-eyebrow print:hidden">
+          <span className="admin-eyebrow">
             <BarChart3 className="h-3 w-3" />
             Analytics
           </span>
           <h1 className="admin-title mt-3">Reports <em>&amp; Analytics</em></h1>
           <p className="admin-subtitle">Repository performance and viewer insights</p>
-          <p className="mt-1 hidden text-[12px] text-[#607B72] print:block">
-            Generated {new Date().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
-          </p>
         </div>
-        <div className="flex items-center gap-4 print:hidden">
+        <div className="flex items-center gap-4">
           <Link to="/admin/research" className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold text-[#0C765E] transition hover:text-forest">
             View Catalog <ArrowRight className="h-3.5 w-3.5" />
           </Link>
@@ -166,7 +163,23 @@ export default function AdminReports() {
         </div>
       </div>
 
-      <div className="hidden print:mt-4 print:block print:h-px print:bg-[#DCE9E3]" />
+      {/* Document sheet header, PDF only */}
+      <div className="hidden print:block">
+        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5F7C2A]">
+          ResearchHub · Institutional Research Repository
+        </p>
+        <h1 className="mt-1 text-[30px] font-extrabold leading-tight tracking-tight text-[#14264E]">
+          Research Reports
+        </h1>
+        <h2 className="mt-5 text-center text-[22px] font-bold text-[#5F7C2A]">Repository Analytics</h2>
+        <div className="mt-2 border-t-[3px] border-[#6E8B2F]">
+          <div className="mt-[2px] border-t border-[#6E8B2F]" />
+        </div>
+        <p className="mt-2 text-right text-[11px] text-[#4A4A4A]">
+          Generated {new Date().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
+        </p>
+      </div>
+
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 print:hidden">
         <StatCard
           label="Total Research"
@@ -261,12 +274,11 @@ export default function AdminReports() {
             )}
           </form>
 
-          <div className="hidden print:mb-3 print:flex print:items-center print:gap-2">
-            <FolderTree className="h-4 w-4 text-emerald-brand" />
-            <h2 className="text-[15px] font-semibold text-[#103F37]">Research by Program &amp; Year</h2>
+          <div className="hidden print:flex print:items-center print:border print:border-[#333] print:bg-[#E9F0DA] print:px-3 print:py-2">
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.09em] text-[#23302A]">Research by Program &amp; Year</h2>
           </div>
 
-          <p className="mt-4 text-[12.5px] text-[#607B72] print:mt-0">
+          <p className="mt-4 text-[12.5px] text-[#607B72] print:mt-2 print:mb-2">
             <span className="font-semibold text-forest">{filteredTotals.total}</span> works across{' '}
             <span className="font-semibold text-forest">{visibleGroups.length}</span> {groupNoun}
             {' · '}

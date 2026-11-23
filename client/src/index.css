@@ -2251,4 +2251,52 @@
   .admin-page h3 {
     break-after: avoid;
   }
+
+  /* Reports export reads as a printed document sheet */
+  .report-doc,
+  .report-doc * {
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+  .report-doc .glass,
+  .report-doc .admin-panel {
+    background: #FFFFFF !important;
+    border: 1px solid #333333 !important;
+  }
+  .report-doc .admin-panel-head {
+    background: #E9F0DA !important;
+    border-bottom: 1px solid #333333 !important;
+  }
+  .report-doc .admin-panel-title {
+    color: #23302A;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.09em;
+  }
+  .report-doc .admin-panel-title svg {
+    display: none;
+  }
+  .report-doc .admin-panel-body h3 svg {
+    display: none;
+  }
+  .report-doc .bg-emerald-brand,
+  .report-doc .bg-\[\#08755B\] {
+    background-color: #6E8B2F !important;
+  }
+  .report-doc .admin-table thead th {
+    background: #5F7C2A !important;
+    color: #FFFFFF !important;
+    border: 1px solid #333333;
+  }
+  .report-doc .admin-table tbody td {
+    border: 1px solid #333333;
+  }
+  .report-doc .admin-table tbody tr:last-child td {
+    border-bottom: 1px solid #333333;
+  }
+  .report-doc .print-keep {
+    background: #FFFFFF !important;
+    border: 1px solid #333333 !important;
+  }
 }
