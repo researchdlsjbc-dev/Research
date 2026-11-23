@@ -146,7 +146,7 @@ export default function AdminReports() {
     <div className="admin-page space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <span className="admin-eyebrow">
+          <span className="admin-eyebrow print:hidden">
             <BarChart3 className="h-3 w-3" />
             Analytics
           </span>
@@ -166,7 +166,7 @@ export default function AdminReports() {
         </div>
       </div>
 
-      {/* Key Metrics */}
+      <div className="hidden print:mt-4 print:block print:h-px print:bg-[#DCE9E3]" />
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 print:hidden">
         <StatCard
           label="Total Research"
@@ -338,10 +338,10 @@ export default function AdminReports() {
             ) : (
               <div className="space-y-2">
                 {topViews.map((item, i) => (
-                  <div key={item.code} className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40">
+                  <div key={item.code} className="print-keep flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] font-mono text-[11px] font-bold text-[#0C765E]">{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-[13px] font-semibold text-forest">{item.title}</div>
+                      <div className="truncate text-[13px] font-semibold text-forest print:overflow-visible print:whitespace-normal">{item.title}</div>
                       <div className="font-mono text-[11px] text-[#607B72]">{item.code}</div>
                     </div>
                     <div className="flex w-24 shrink-0 items-center gap-2 sm:w-36">
@@ -366,7 +366,7 @@ export default function AdminReports() {
             <h2 className="admin-panel-title"><LayoutDashboard className="h-4 w-4 text-emerald-brand" /> Distribution Overview</h2>
           </div>
           <div className="admin-panel-body">
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 print:grid-cols-3 print:gap-3">
               {[
                 { key: 'approved', label: 'Approved', value: stats?.approved ?? 0, color: 'bg-emerald-100 text-emerald-700', bar: 'bg-emerald-600', icon: CheckCircle2 },
                 { key: 'pending', label: 'Pending', value: stats?.pending ?? 0, color: 'bg-amber-100 text-amber-700', bar: 'bg-amber-500', icon: Clock },
@@ -377,7 +377,7 @@ export default function AdminReports() {
                   <Link
                     key={item.label}
                     to={`/admin/browse?status=${item.key}`}
-                    className="rounded-2xl border border-[#E6EDE9] bg-white p-4 transition hover:border-[#CFE2DA] hover:bg-emerald-50/30"
+                    className="print-keep rounded-2xl border border-[#E6EDE9] bg-white p-4 transition hover:border-[#CFE2DA] hover:bg-emerald-50/30"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex min-w-0 items-center gap-2.5">
@@ -399,7 +399,7 @@ export default function AdminReports() {
               })}
             </div>
 
-            <div className="mt-5 grid grid-cols-1 gap-6 border-t border-[#E9F0EC] pt-5 lg:grid-cols-2">
+            <div className="mt-5 grid grid-cols-1 gap-6 border-t border-[#E9F0EC] pt-5 lg:grid-cols-2 print:mt-4 print:grid-cols-2 print:gap-5 print:pt-4">
               <section className="min-w-0">
                 <h3 className="mb-3 flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#607B72]">
                   <FolderTree className="h-3.5 w-3.5 text-emerald-brand" /> Research by Program
@@ -412,13 +412,13 @@ export default function AdminReports() {
                       <Link
                         key={item.program}
                         to={item.program_code ? `/admin/browse?program=${encodeURIComponent(item.program_code)}` : '/admin/browse'}
-                        className="flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40"
+                        className="print-keep flex items-center gap-3 rounded-xl border border-[#E6EDE9] bg-white p-3 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40"
                       >
                         <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] text-[#0C765E]">
                           <FolderTree className="h-3.5 w-3.5" />
                         </span>
                         <div className="min-w-0 flex-1">
-                          <div className="truncate text-[13px] font-semibold text-forest">{item.program || 'Unassigned'}</div>
+                          <div className="truncate text-[13px] font-semibold text-forest print:overflow-visible print:whitespace-normal">{item.program || 'Unassigned'}</div>
                           <div className="text-[11px] text-[#607B72]">{pct(item.count, programTotal)}% of works</div>
                         </div>
                         <div className="flex w-24 shrink-0 items-center gap-2 sm:w-36">
@@ -436,7 +436,7 @@ export default function AdminReports() {
                 )}
               </section>
 
-              <section className="min-w-0 lg:border-l lg:border-[#E9F0EC] lg:pl-6">
+              <section className="min-w-0 lg:border-l lg:border-[#E9F0EC] lg:pl-6 print:border-l print:border-[#E9F0EC] print:pl-5">
                 <h3 className="mb-3 flex items-center gap-2 text-[11.5px] font-bold uppercase tracking-[0.08em] text-[#607B72]">
                   <Calendar className="h-3.5 w-3.5 text-emerald-brand" /> Research by Year
                 </h3>
@@ -448,7 +448,7 @@ export default function AdminReports() {
                       <Link
                         key={item.year}
                         to={`/admin/browse?year=${item.year}`}
-                        className="flex items-center gap-2 rounded-lg border border-[#E6EDE9] bg-white px-2.5 py-2 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40"
+                        className="print-keep flex items-center gap-2 rounded-lg border border-[#E6EDE9] bg-white px-2.5 py-2 transition hover:border-[#CFE2DA] hover:bg-emerald-50/40"
                       >
                         <span className="flex h-5 w-9 shrink-0 items-center justify-center rounded-full bg-[#E8F3EE] font-mono text-[10px] font-bold text-[#0C765E]">{item.year}</span>
                         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-[#E6EDE9]">

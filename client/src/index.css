@@ -2191,6 +2191,7 @@
    ================================================================ */
 @media print {
   @page {
+    size: A4 portrait;
     margin: 12mm;
   }
   html,
@@ -2201,11 +2202,11 @@
   }
   .admin-page {
     max-width: none !important;
+    font-size: 12.5px;
   }
   .glass {
     background: #FFFFFF !important;
     box-shadow: none !important;
-    break-inside: avoid;
   }
   .admin-stat {
     break-inside: avoid;
@@ -2215,5 +2216,39 @@
   }
   .admin-table {
     min-width: 0 !important;
+  }
+  .admin-title {
+    font-size: 26px;
+  }
+  .admin-subtitle {
+    margin-top: 4px;
+    font-size: 12.5px;
+  }
+  .admin-panel-body {
+    padding: 14px 16px !important;
+  }
+  .admin-panel-head {
+    padding: 10px 16px !important;
+  }
+  .admin-panel-title {
+    font-size: 13.5px;
+  }
+  .admin-table thead {
+    display: table-header-group;
+  }
+  .admin-table thead th {
+    padding: 6px 12px !important;
+  }
+  .admin-table tbody td {
+    padding: 7px 12px !important;
+    font-size: 12.5px !important;
+  }
+  .admin-table tbody tr,
+  .print-keep {
+    break-inside: avoid;
+  }
+  .admin-page h2,
+  .admin-page h3 {
+    break-after: avoid;
   }
 }
