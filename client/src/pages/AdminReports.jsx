@@ -112,6 +112,19 @@ export default function AdminReports() {
   };
   const groupNoun = visibleGroups.length === 1 ? 'program-year group' : 'program-year groups';
 
+  // The filter bar is hidden in print, so the PDF summary spells out what is applied
+  const activeFilterLabels = useMemo(() => {
+    const labels = [];
+    if (programFilter) {
+      labels.push(programFilter === '__none'
+        ? 'Unassigned'
+        : (programList.find(p => p.code === programFilter)?.name || programFilter));
+    }
+    if (yearFilter) labels.push(`Year ${yearFilter}`);
+    if (query.trim()) labels.push(`Search "${query.trim()}"`);
+    return labels;
+  }, [programFilter, yearFilter, query, programList]);
+
   const pct = (part, whole) => whole ? Math.round((part / whole) * 100) : 0;
 
   const handleExportPdf = () => {
@@ -154,7 +167,7 @@ export default function AdminReports() {
       </div>
 
       {/* Key Metrics */}
-      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 print:hidden">
         <StatCard
           label="Total Research"
           value={stats?.total ?? 0}
@@ -206,7 +219,7 @@ export default function AdminReports() {
         <div className="admin-panel-body">
           <h2 className="sr-only">Search Breakdown</h2>
           <form
-            className="admin-filterbar"
+            className="admin-filterbar print:hidden"
             onSubmit={e => { e.preventDefault(); setQuery(draftQuery.trim()); }}
           >
             <div className="admin-search">
@@ -248,11 +261,19 @@ export default function AdminReports() {
             )}
           </form>
 
-          <p className="mt-4 text-[12.5px] text-[#607B72]">
+          <div className="hidden print:mb-3 print:flex print:items-center print:gap-2">
+            <FolderTree className="h-4 w-4 text-emerald-brand" />
+            <h2 className="text-[15px] font-semibold text-[#103F37]">Research by Program &amp; Year</h2>
+          </div>
+
+          <p className="mt-4 text-[12.5px] text-[#607B72] print:mt-0">
             <span className="font-semibold text-forest">{filteredTotals.total}</span> works across{' '}
             <span className="font-semibold text-forest">{visibleGroups.length}</span> {groupNoun}
             {' · '}
             <span className="font-semibold text-forest">{filteredTotals.views.toLocaleString()}</span> views
+            {activeFilterLabels.length > 0 && (
+              <span className="hidden print:inline"> · Filters: {activeFilterLabels.join(', ')}</span>
+            )}
           </p>
 
           <div className="table-scroll mt-3">
