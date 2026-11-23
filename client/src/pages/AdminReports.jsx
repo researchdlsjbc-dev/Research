@@ -127,6 +127,35 @@ export default function AdminReports() {
 
   const pct = (part, whole) => whole ? Math.round((part / whole) * 100) : 0;
 
+  // Backup tables in the PDF appendix, aggregated from the exported rows
+  const programAppendix = useMemo(() => {
+    const map = new Map();
+    visibleGroups.forEach(g => {
+      const entry = map.get(g.label) || { label: g.label, total: 0, approved: 0, pending: 0, rejected: 0, views: 0 };
+      entry.total += g.total;
+      entry.approved += g.approved;
+      entry.pending += g.pending;
+      entry.rejected += g.rejected;
+      entry.views += g.views;
+      map.set(g.label, entry);
+    });
+    return [...map.values()].sort((a, b) => a.label.localeCompare(b.label));
+  }, [visibleGroups]);
+
+  const yearAppendix = useMemo(() => {
+    const map = new Map();
+    visibleGroups.forEach(g => {
+      const entry = map.get(g.year) || { year: g.year, total: 0, approved: 0, pending: 0, rejected: 0, views: 0 };
+      entry.total += g.total;
+      entry.approved += g.approved;
+      entry.pending += g.pending;
+      entry.rejected += g.rejected;
+      entry.views += g.views;
+      map.set(g.year, entry);
+    });
+    return [...map.values()].sort((a, b) => b.year - a.year);
+  }, [visibleGroups]);
+
   const handleExportPdf = () => {
     const previousTitle = document.title;
     const stamp = new Date().toLocaleDateString('en-CA');
@@ -165,19 +194,43 @@ export default function AdminReports() {
 
       {/* Document sheet header, PDF only */}
       <div className="hidden print:block">
-        <p className="text-[11px] font-bold uppercase tracking-[0.18em] text-[#5F7C2A]">
+        <p className="text-center text-[10.5px] font-bold uppercase tracking-[0.24em] text-[#5F7C2A]">
           ResearchHub · Institutional Research Repository
         </p>
-        <h1 className="mt-1 text-[30px] font-extrabold leading-tight tracking-tight text-[#14264E]">
+        <h1 className="mt-2 text-center text-[30px] font-extrabold leading-tight tracking-tight text-[#14264E]">
           Research Reports
         </h1>
-        <h2 className="mt-5 text-center text-[22px] font-bold text-[#5F7C2A]">Repository Analytics</h2>
-        <div className="mt-2 border-t-[3px] border-[#6E8B2F]">
+        <p className="mt-1 text-center text-[13px] font-semibold text-[#3F4A44]">
+          Repository Analytics &amp; Inventory of Research Works
+        </p>
+        <div className="mt-3 border-t-[3px] border-[#6E8B2F]">
           <div className="mt-[2px] border-t border-[#6E8B2F]" />
         </div>
-        <p className="mt-2 text-right text-[11px] text-[#4A4A4A]">
-          Generated {new Date().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
-        </p>
+
+        <table className="mt-4 w-full border-collapse text-[11px]">
+          <tbody>
+            <tr>
+              <th className="w-[112px] border border-[#333] bg-[#E9F0DA] px-2.5 py-1.5 text-left font-bold text-[#23302A]">Reference</th>
+              <td className="border border-[#333] px-2.5 py-1.5 text-[#23302A]">
+                RH-RPT-{new Date().toLocaleDateString('en-CA').replace(/-/g, '')}
+              </td>
+              <th className="w-[112px] border border-[#333] bg-[#E9F0DA] px-2.5 py-1.5 text-left font-bold text-[#23302A]">Date Generated</th>
+              <td className="border border-[#333] px-2.5 py-1.5 text-[#23302A]">
+                {new Date().toLocaleString(undefined, { dateStyle: 'long', timeStyle: 'short' })}
+              </td>
+            </tr>
+            <tr>
+              <th className="border border-[#333] bg-[#E9F0DA] px-2.5 py-1.5 text-left font-bold text-[#23302A]">Coverage</th>
+              <td className="border border-[#333] px-2.5 py-1.5 text-[#23302A]">
+                {activeFilterLabels.length ? activeFilterLabels.join(' · ') : 'All programs · All years'}
+              </td>
+              <th className="border border-[#333] bg-[#E9F0DA] px-2.5 py-1.5 text-left font-bold text-[#23302A]">Records</th>
+              <td className="border border-[#333] px-2.5 py-1.5 text-[#23302A]">
+                {filteredTotals.total} works · {visibleGroups.length} {groupNoun}
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
 
       <div className="grid gap-3.5 sm:grid-cols-2 lg:grid-cols-4 print:hidden">
@@ -275,7 +328,7 @@ export default function AdminReports() {
           </form>
 
           <div className="hidden print:flex print:items-center print:border print:border-[#333] print:bg-[#E9F0DA] print:px-3 print:py-2">
-            <h2 className="text-[11px] font-bold uppercase tracking-[0.09em] text-[#23302A]">Research by Program &amp; Year</h2>
+            <h2 className="text-[11px] font-bold uppercase tracking-[0.09em] text-[#23302A]">1. Research by Program &amp; Year</h2>
           </div>
 
           <p className="mt-4 text-[12.5px] text-[#607B72] print:mt-2 print:mb-2">
@@ -342,7 +395,7 @@ export default function AdminReports() {
         {/* Top Viewed Research */}
         <Card className="min-w-0">
           <div className="admin-panel-head">
-            <h2 className="admin-panel-title"><Eye className="h-4 w-4 text-emerald-brand" /> Most Viewed Research</h2>
+            <h2 className="admin-panel-title"><Eye className="h-4 w-4 text-emerald-brand" /> <span className="hidden print:inline">2.{'\u00A0'}</span>Most Viewed Research</h2>
           </div>
           <div className="admin-panel-body space-y-2">
             {topViews.length === 0 ? (
@@ -375,7 +428,7 @@ export default function AdminReports() {
         {/* Distribution Overview */}
         <Card className="min-w-0">
           <div className="admin-panel-head">
-            <h2 className="admin-panel-title"><LayoutDashboard className="h-4 w-4 text-emerald-brand" /> Distribution Overview</h2>
+            <h2 className="admin-panel-title"><LayoutDashboard className="h-4 w-4 text-emerald-brand" /> <span className="hidden print:inline">3.{'\u00A0'}</span>Distribution Overview</h2>
           </div>
           <div className="admin-panel-body">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 print:grid-cols-3 print:gap-3">
@@ -475,6 +528,119 @@ export default function AdminReports() {
             </div>
           </div>
         </Card>
+      </div>
+
+      {/* Appendix A: per-program backup, PDF only */}
+      <Card className="hidden print:block print:break-before-page">
+        <div className="admin-panel-head">
+          <h2 className="admin-panel-title">Appendix A — Research by Program</h2>
+        </div>
+        <div className="admin-panel-body">
+          <p className="mb-2 text-[11px] text-[#4A4A4A]">Backup summary of the exported works for each research program.</p>
+          {programAppendix.length === 0 ? (
+            <p className="py-4 text-center text-[12px] text-[#555]">No data for this selection.</p>
+          ) : (
+            <table className="admin-table w-full">
+              <thead>
+                <tr>
+                  <th>Program</th>
+                  <th>Works</th>
+                  <th>Approved</th>
+                  <th>Pending</th>
+                  <th>Rejected</th>
+                  <th>Views</th>
+                </tr>
+              </thead>
+              <tbody>
+                {programAppendix.map(item => (
+                  <tr key={item.label}>
+                    <td><span className="font-medium text-forest">{item.label}</span></td>
+                    <td><span className="font-semibold text-forest">{item.total}</span></td>
+                    <td><span className="font-semibold text-forest">{item.approved}</span></td>
+                    <td><span className="font-semibold text-forest">{item.pending}</span></td>
+                    <td><span className="font-semibold text-forest">{item.rejected}</span></td>
+                    <td><span className="font-mono text-[12px] text-[#245D50]">{item.views.toLocaleString()}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">Total</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.total}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.approved}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.pending}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.rejected}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.views.toLocaleString()}</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      </Card>
+
+      {/* Appendix B: per-year backup, PDF only */}
+      <Card className="hidden print:block">
+        <div className="admin-panel-head">
+          <h2 className="admin-panel-title">Appendix B — Research by Year</h2>
+        </div>
+        <div className="admin-panel-body">
+          <p className="mb-2 text-[11px] text-[#4A4A4A]">Backup summary of the exported works for each year.</p>
+          {yearAppendix.length === 0 ? (
+            <p className="py-4 text-center text-[12px] text-[#555]">No data for this selection.</p>
+          ) : (
+            <table className="admin-table w-full">
+              <thead>
+                <tr>
+                  <th>Year</th>
+                  <th>Works</th>
+                  <th>Approved</th>
+                  <th>Pending</th>
+                  <th>Rejected</th>
+                  <th>Views</th>
+                </tr>
+              </thead>
+              <tbody>
+                {yearAppendix.map(item => (
+                  <tr key={item.year}>
+                    <td><span className="font-mono text-[12.5px] font-semibold text-forest">{item.year}</span></td>
+                    <td><span className="font-semibold text-forest">{item.total}</span></td>
+                    <td><span className="font-semibold text-forest">{item.approved}</span></td>
+                    <td><span className="font-semibold text-forest">{item.pending}</span></td>
+                    <td><span className="font-semibold text-forest">{item.rejected}</span></td>
+                    <td><span className="font-mono text-[12px] text-[#245D50]">{item.views.toLocaleString()}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">Total</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.total}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.approved}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.pending}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.rejected}</td>
+                  <td className="border border-[#333] bg-[#E9F0DA] px-3 py-1.5 font-bold text-[#23302A]">{filteredTotals.views.toLocaleString()}</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+      </Card>
+
+      {/* Sign-off block, PDF only */}
+      <div className="hidden print:block print:break-inside-avoid">
+        <div className="mt-4 grid grid-cols-2 gap-12">
+          <div>
+            <div className="mt-10 border-b border-[#333]" />
+            <p className="mt-1.5 text-center text-[11px] font-bold uppercase tracking-[0.08em] text-[#23302A]">Prepared by</p>
+            <p className="text-center text-[10.5px] text-[#555]">Research Staff</p>
+          </div>
+          <div>
+            <div className="mt-10 border-b border-[#333]" />
+            <p className="mt-1.5 text-center text-[11px] font-bold uppercase tracking-[0.08em] text-[#23302A]">Verified by</p>
+            <p className="text-center text-[10.5px] text-[#555]">Repository Administrator</p>
+          </div>
+        </div>
+        <p className="mt-6 text-center text-[10px] uppercase tracking-[0.24em] text-[#6B7B72]">— End of Report —</p>
       </div>
     </div>
   );
