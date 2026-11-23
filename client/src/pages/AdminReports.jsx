@@ -5,6 +5,10 @@ import { API } from '../context/AuthContext';
 import { Card, CardContent } from '../components/ui/card';
 import { Badge } from '../components/ui/badge';
 import { Button } from '../components/ui/button';
+import { Label } from '../components/ui/label';
+import {
+  Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle,
+} from '../components/ui/dialog';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '../components/ui/table';
 import {
   LayoutDashboard, FileText, Users, FolderTree, Eye, BarChart3, Clock, CheckCircle2, XCircle, ArrowRight, TrendingUp, TrendingDown, Calendar, Search, X, Printer
@@ -42,6 +46,9 @@ export default function AdminReports() {
   const [yearFilter, setYearFilter] = useState('');
   const [query, setQuery] = useState('');
   const [draftQuery, setDraftQuery] = useState('');
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportProgram, setExportProgram] = useState('');
+  const [exportYear, setExportYear] = useState('');
 
   useEffect(() => {
     axios.get(`${API}/stats/`).then(r => {
@@ -127,6 +134,22 @@ export default function AdminReports() {
 
   const pct = (part, whole) => whole ? Math.round((part / whole) * 100) : 0;
 
+  // What the chosen export scope will contain, shown in the export dialog
+  const exportSummary = useMemo(() => {
+    const term = query.trim().toLowerCase();
+    const rows = matrix.filter(row => {
+      const programOk = !exportProgram
+        || (exportProgram === '__none' ? !row.program_code : row.program_code === exportProgram);
+      const yearOk = !exportYear || String(row.year) === exportYear;
+      const searchOk = !term || `${row.program_name || 'Unassigned'} ${row.year ?? ''}`.toLowerCase().includes(term);
+      return programOk && yearOk && searchOk;
+    });
+    return {
+      total: rows.reduce((sum, row) => sum + row.total, 0),
+      groups: rows.length,
+    };
+  }, [matrix, exportProgram, exportYear, query]);
+
   // Backup tables in the PDF appendix, aggregated from the exported rows
   const programAppendix = useMemo(() => {
     const map = new Map();
@@ -156,12 +179,24 @@ export default function AdminReports() {
     return [...map.values()].sort((a, b) => b.year - a.year);
   }, [visibleGroups]);
 
+  const openExportDialog = () => {
+    setExportProgram(programFilter);
+    setExportYear(yearFilter);
+    setExportOpen(true);
+  };
+
   const handleExportPdf = () => {
+    setProgramFilter(exportProgram);
+    setYearFilter(exportYear);
+    setExportOpen(false);
     const previousTitle = document.title;
     const stamp = new Date().toLocaleDateString('en-CA');
     document.title = `ResearchHub Reports ${stamp}`;
-    window.print();
-    document.title = previousTitle;
+    // Let the report re-render with the chosen scope before the print snapshot
+    setTimeout(() => {
+      window.print();
+      document.title = previousTitle;
+    }, 250);
   };
 
   if (loading) return <div className="admin-page flex h-64 items-center justify-center"><div className="text-[15px] font-semibold text-muted-green">Loading analytics...</div></div>;
@@ -186,7 +221,7 @@ export default function AdminReports() {
           <Link to="/admin/research" className="inline-flex items-center gap-1.5 whitespace-nowrap text-[13px] font-semibold text-[#0C765E] transition hover:text-forest">
             View Catalog <ArrowRight className="h-3.5 w-3.5" />
           </Link>
-          <Button onClick={handleExportPdf} className="h-9 shrink-0 rounded-full px-4 text-[13px]">
+          <Button onClick={openExportDialog} className="h-9 shrink-0 rounded-full px-4 text-[13px]">
             <Printer className="h-4 w-4" /> Export PDF
           </Button>
         </div>
@@ -642,6 +677,67 @@ export default function AdminReports() {
         </div>
         <p className="mt-6 text-center text-[10px] uppercase tracking-[0.24em] text-[#6B7B72]">— End of Report —</p>
       </div>
+
+      <Dialog open={exportOpen} onOpenChange={setExportOpen}>
+        <DialogContent className="border-[#E6EDE9] bg-white print:hidden">
+          <DialogHeader>
+            <DialogTitle className="font-display text-2xl text-forest">Export report as PDF</DialogTitle>
+            <DialogDescription>
+              Choose the research works to include. The exported document contains the
+              report tables plus the by-program and by-year backup appendices.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <Label htmlFor="export-program" className="text-[12px] font-semibold text-[#557A70]">Program</Label>
+              <select
+                id="export-program"
+                className="admin-select w-full"
+                value={exportProgram}
+                onChange={e => setExportProgram(e.target.value)}
+              >
+                <option value="">All programs</option>
+                {programList.map(p => <option key={p.id} value={p.code}>{p.name}</option>)}
+                {hasUnassigned && <option value="__none">Unassigned</option>}
+              </select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="export-year" className="text-[12px] font-semibold text-[#557A70]">Year</Label>
+              <select
+                id="export-year"
+                className="admin-select w-full"
+                value={exportYear}
+                onChange={e => setExportYear(e.target.value)}
+              >
+                <option value="">All years</option>
+                {yearOptions.map(y => <option key={y} value={y}>{y}</option>)}
+              </select>
+            </div>
+          </div>
+
+          <p className="rounded-xl bg-[#F2F7F4] px-3.5 py-2.5 text-[12.5px] text-[#557A70]">
+            Will include <span className="font-semibold text-forest">{exportSummary.total}</span>{' '}
+            {exportSummary.total === 1 ? 'work' : 'works'} across{' '}
+            <span className="font-semibold text-forest">{exportSummary.groups}</span>{' '}
+            {exportSummary.groups === 1 ? 'program-year group' : 'program-year groups'}.
+          </p>
+
+          <DialogFooter className="pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              className="rounded-full border-[#DCEBE5] text-[13px] font-semibold text-muted-green transition hover:bg-soft-green hover:text-forest"
+              onClick={() => setExportOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" className="gradient-btn rounded-full" onClick={handleExportPdf}>
+              <Printer className="h-4 w-4" /> Export PDF
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
