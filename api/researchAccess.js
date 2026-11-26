@@ -4,7 +4,7 @@ const ACCESS_CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 const ACCESS_CODE_LENGTH = 8;
 const ACCESS_CODE_GROUP_SIZE = 4;
 const USER_ACCESS_CODE_MIN_LENGTH = 4;
-const USER_ACCESS_CODE_MAX_LENGTH = 32;
+const USER_ACCESS_CODE_MAX_LENGTH = 11;
 
 function normalizeAccessCode(value) {
   return String(value || '')
@@ -25,9 +25,11 @@ function isValidAccessCodeFormat(value) {
 }
 
 function isValidUserAccessCode(value) {
+  const raw = String(value || '').trim();
   const normalized = normalizeAccessCode(value);
-  return normalized.length >= USER_ACCESS_CODE_MIN_LENGTH
-    && normalized.length <= USER_ACCESS_CODE_MAX_LENGTH;
+  return /^[A-Z0-9-]+$/i.test(raw)
+    && normalized.length >= USER_ACCESS_CODE_MIN_LENGTH
+    && raw.length <= USER_ACCESS_CODE_MAX_LENGTH;
 }
 
 function generateAccessCode() {

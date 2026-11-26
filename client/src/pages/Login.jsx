@@ -79,9 +79,6 @@ export default function Login() {
             <div className="mt-5 text-center text-sm text-muted-foreground">
               Don't have an account? <a href="/register" className="font-semibold text-[#0C765E] hover:underline">Register</a>
             </div>
-            <div className="mt-4 text-center text-xs text-muted-foreground bg-white/70 rounded-2xl quirk-b py-2.5 border border-border font-mono">
-              Demo admin: <strong className="text-[#0C765E]">admin</strong> / <strong className="text-[#0C765E]">admin123</strong>
-            </div>
           </CardContent>
         </Card>
       </div>

@@ -391,6 +391,7 @@ export default function ResearchDetail() {
                 placeholder="ABCD-EFGH"
                 autoComplete="off"
                 autoFocus
+                maxLength={11}
                 className="rounded-xl border-[#DCEBE5] bg-ivory text-center font-mono text-base uppercase tracking-wider"
               />
             </div>

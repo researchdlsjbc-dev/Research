@@ -466,7 +466,7 @@ export default function SubmitResearch() {
                         value={accessInput}
                         onChange={e => { setAccessInput(e.target.value); setAccessError(''); }}
                         placeholder="e.g. DLSU2026"
-                        maxLength={32}
+                        maxLength={11}
                         autoComplete="off"
                         className="w-full max-w-[260px] rounded-xl border-[#DCEBE5] bg-ivory font-mono uppercase tracking-wider"
                         disabled={accessBusy}
@@ -483,7 +483,7 @@ export default function SubmitResearch() {
                       )}
                     </div>
                     <p className="text-[11.5px] text-muted-green">
-                      4–32 letters or numbers. {id ? 'Saving replaces the current code immediately.' : 'This code is stored when the research is saved.'}
+                      4–11 letters, numbers, or dashes. {id ? 'Saving replaces the current code immediately.' : 'This code is stored when the research is saved.'}
                     </p>
                   </div>
                   {id && accessCode && accessCodeUpdatedAt && (
